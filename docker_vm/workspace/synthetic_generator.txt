@@ -1,0 +1,55 @@
+Synthetic QA Pair Generator for Norwegian Language Models
+
+This script generates synthetic question-answer pairs in Norwegian from source documents using LLaMA models.
+
+USAGE:
+python3 synthetic_generator.py [--model MODEL_ID] [--num_pairs N] [--output OUTPUT_FILE]
+
+Arguments:
+--model      Model ID to use for generation (default: meta-llama/Meta-Llama-3.1-8B)
+--num_pairs  Number of QA pairs to generate per source (default: 3) 
+--output     Output file path (default: data/synthetic_qa_pairs.json)
+
+Input:
+The script reads source documents from data/input/sources.json
+Each source should have a "title" and "content" field
+Content should be in Norwegian text
+
+Output:
+Generates QA pairs in JSON format compatible with the training pipeline
+Saved to specified output file (default: data/synthetic_qa_pairs.json)
+Format matches the training dataset structure with "prompt" and "response" fields
+
+Example sources.json structure:
+{
+    "sources": [
+        {
+            "title": "Example Title",
+            "content": "Example Norwegian text content..."
+        }
+    ]
+}
+
+Example usage:
+1. Basic usage with defaults:
+   python3 synthetic_generator.py
+
+2. Custom configuration:
+   python3 synthetic_generator.py --model meta-llama/Meta-Llama-3.1-8B --num_pairs 5 --output data/custom_qa.json
+
+3. To use generated pairs for training:
+   - Generate QA pairs using this script
+   - Use the output file as input for finetune_llama.py
+
+Requirements:
+- transformers
+- torch
+- tqdm
+- Access to LLaMA model
+- CUDA-capable GPU
+
+Notes:
+- The script requires sufficient GPU memory to load the LLaMA model
+- Generation parameters (temperature, top_p) can be adjusted in the code
+- Error handling is included for malformed model outputs
+- Creates example sources.json if none exists 

@@ -10,6 +10,7 @@ from transformers import (
 from trl import SFTTrainer
 import json
 from huggingface_hub import login
+import wandb
 
 def load_dataset_from_json(file_path):
     """Load and format the dataset from JSON file."""
@@ -50,6 +51,19 @@ def setup_model_and_tokenizer(model_id):
     return model, tokenizer
 
 def main():
+    # Initialize wandb
+    wandb.init(
+        project="llama-norwegian-ft",
+        config={
+            "model": "meta-llama/Meta-Llama-3.1-8B",
+            "learning_rate": 2e-4,
+            "batch_size": 4,
+            "epochs": 3,
+            "lora_r": 8,
+            "lora_alpha": 16,
+        }
+    )
+
     # Login to Hugging Face (you'll need to have your token ready)
     login()
 
@@ -88,6 +102,10 @@ def main():
         max_steps=100,
         fp16=True,
         push_to_hub=False,  # Set to True if you want to push to HF Hub
+        # Add wandb reporting
+        report_to="wandb",
+        # Add run name for wandb
+        run_name=f"llama-norwegian-ft-{wandb.run.id}"
     )
     
     # Initialize trainer
@@ -107,6 +125,9 @@ def main():
     
     # Save the model
     trainer.save_model(OUTPUT_DIR)
+
+    # Close wandb run
+    wandb.finish()
 
 if __name__ == "__main__":
     main() 

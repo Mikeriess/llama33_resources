@@ -5,4 +5,5 @@ transformers
 trl
 torch
 datasets
-huggingface-hub 
+huggingface-hub
+wandb 

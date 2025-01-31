@@ -4,6 +4,10 @@
 echo "Installing Python packages..."
 pip3 install -r requirements.txt
 
+# Login to wandb
+echo "Logging into Weights & Biases..."
+wandb login
+
 # Install PyTorch with CUDA support
 echo "Installing PyTorch with CUDA 12.4 support..."
 pip3 install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
