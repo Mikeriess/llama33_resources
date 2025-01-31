@@ -112,7 +112,11 @@ def main():
         # Add wandb reporting
         report_to="wandb",
         # Add run name for wandb
-        run_name=f"llama-norwegian-ft-{wandb.run.id}"
+        run_name=f"llama-norwegian-ft-{wandb.run.id}",
+        dataset_kwargs={
+            "append_concat_token": True,
+            "add_special_tokens": True
+        }
     )
     
     # Initialize trainer with packed dataset for efficiency
@@ -121,11 +125,7 @@ def main():
         train_dataset=dataset,
         peft_config=peft_config,
         args=training_args,
-        processing_class=tokenizer,
-        dataset_kwargs={
-            "append_concat_token": True,
-            "add_special_tokens": True
-        }
+        processing_class=tokenizer
     )
     
     # Start training
