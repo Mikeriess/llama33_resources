@@ -56,9 +56,10 @@ def main():
     # Configuration
     MODEL_ID = "meta-llama/Meta-Llama-3.1-8B"
     OUTPUT_DIR = "./results"
+    DATA_DIR = "./data"  # Add data directory path
     
     # Load dataset
-    dataset = load_dataset_from_json("sample_dataset.json")
+    dataset = load_dataset_from_json(f"{DATA_DIR}/sample_dataset.json")  # Update dataset path
     
     # Setup model and tokenizer
     model, tokenizer = setup_model_and_tokenizer(MODEL_ID)

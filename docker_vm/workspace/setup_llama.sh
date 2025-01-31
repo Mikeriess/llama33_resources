@@ -1,13 +1,8 @@
 #!/bin/bash
 
-# Create and activate a virtual environment
-echo "Creating virtual environment..."
-python3 -m venv llama_env
-source llama_env/bin/activate
-
 # Install requirements
 echo "Installing Python packages..."
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 
 # Install PyTorch with CUDA support
 echo "Installing PyTorch with CUDA 12.4 support..."
@@ -21,5 +16,9 @@ python3 -c "import torch; print('CUDA available:', torch.cuda.is_available()); p
 echo "Creating models directory..."
 mkdir -p models
 
-echo "Setup complete! You can now use the virtual environment with:"
-echo "source llama_env/bin/activate" 
+# Create data directory
+echo "Creating data directory..."
+mkdir -p data
+
+echo "Setup complete! You can now run the training script with:"
+echo "python3 finetune_llama.py" 
