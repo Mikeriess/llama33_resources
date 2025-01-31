@@ -7,7 +7,7 @@ from transformers import (
     BitsAndBytesConfig,
     TrainingArguments,
 )
-from trl import SFTTrainer, setup_chat_format
+from trl import SFTTrainer, setup_chat_format, SFTConfig
 import json
 import wandb
 
@@ -94,7 +94,7 @@ def main():
     )
     
     # Training arguments optimized for RTX 4090
-    training_args = TrainingArguments(
+    training_args = SFTConfig(
         output_dir=OUTPUT_DIR,
         num_train_epochs=3,
         per_device_train_batch_size=4,
