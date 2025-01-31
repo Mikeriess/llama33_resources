@@ -108,6 +108,7 @@ def main():
         max_steps=100,
         fp16=True,
         push_to_hub=False,  # Set to True if you want to push to HF Hub
+        packing=True,  # Enable packing for better efficiency
         # Add wandb reporting
         report_to="wandb",
         # Add run name for wandb
@@ -121,7 +122,6 @@ def main():
         peft_config=peft_config,
         args=training_args,
         processing_class=tokenizer,
-        packing=True,  # Enable packing for better efficiency
         dataset_kwargs={
             "append_concat_token": True,
             "add_special_tokens": True
