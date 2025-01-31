@@ -1,0 +1,9 @@
+accelerate
+peft
+bitsandbytes
+transformers
+trl
+torch
+datasets
+huggingface-hub
+wandb 

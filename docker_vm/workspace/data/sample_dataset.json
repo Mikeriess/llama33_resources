@@ -1,5 +1,44 @@
 {
     "train": [
-        // ... existing dataset content ...
+        {
+            "prompt": "Hva er de viktigste tradisjonene under 17. mai feiringen i Norge?",
+            "response": "17. mai feiringen i Norge har flere viktige tradisjoner. De mest sentrale er barnetoget, hvor skolebarn går i parade med norske flagg og musikkorps. Folk kler seg i bunad eller finstasen, og det er vanlig å spise is og pølser. Dagen starter ofte med 17. mai frokost med familie eller venner, og mange deltar i arrangementer som taler, kransenedleggelser og folkefester. Det er også tradisjon for leker og aktiviteter for barn, som sekkeløp og potetløp. Hele dagen preges av nasjonalsanger, hurrarop og feiring av norsk demokrati og frihet."
+        },
+        {
+            "prompt": "Hvordan fungerer det norske helsevesenet?",
+            "response": "Det norske helsevesenet er i hovedsak offentlig finansiert gjennom skattesystemet og følger prinsippet om universell tilgang. Alle innbyggere har rett til nødvendig helsehjelp, uavhengig av økonomisk situasjon. Systemet er organisert i to nivåer: primærhelsetjenesten (fastleger, legevakt, helsestasjoner) og spesialisthelsetjenesten (sykehus, spesialistklinikker). Man betaler en egenandel for enkelte tjenester opp til et årlig tak, deretter er behandling gratis. Akutt medisinsk hjelp er alltid tilgjengelig gjennom legevakt og ambulansetjeneste."
+        },
+        {
+            "prompt": "Kan du forklare hva allemannsretten innebærer i Norge?",
+            "response": "Allemannsretten er en tradisjonell rettighet i norsk lov som gir alle rett til å ferdes fritt i naturen, uavhengig av hvem som eier grunnen. Dette inkluderer rett til å gå tur i utmark, plukke bær og sopp, telte i naturen (minst 150 meter fra bebyggelse), og bruke strand og sjø til rekreasjon. Retten kommer med ansvar for å vise hensyn til natur, dyreliv og grunneiere, følge regler om bålforbud, og ikke forstyrre eller skade miljøet. I innmark gjelder egne regler, særlig i vekstsesongen."
+        },
+        {
+            "prompt": "Hvordan påvirker klimaendringer norsk natur og samfunn?",
+            "response": "Klimaendringer påvirker Norge på flere måter. I naturen ser vi økt nedbør, mer ekstremvær, smeltende isbreer og endringer i økosystemer. Dette fører til større risiko for flom, ras og erosjon. For samfunnet betyr det utfordringer for infrastruktur, jordbruk og bebyggelse. Særlig utsatt er kystnære områder og Nord-Norge, hvor permafrosten tiner. Endringene påvirker også tradisjonelle næringer som reindrift og fiske. Norge har derfor vedtatt ambisiøse klimamål og investerer i klimatilpasning og fornybar energi."
+        },
+        {
+            "prompt": "Hva kjennetegner det norske skolesystemet?",
+            "response": "Det norske skolesystemet kjennetegnes av gratis offentlig utdanning for alle. Grunnskolen er obligatorisk og varer i 10 år (barneskole og ungdomsskole). Deretter følger rett til videregående opplæring i 3-4 år. Systemet vektlegger likeverd, inkludering og tilpasset opplæring for alle elever. Det er lite testing i de første årene, og karakterer introduseres først på ungdomsskolen. Høyere utdanning er også hovedsakelig offentlig finansiert, med lave eller ingen studieavgifter. Livslang læring og kritisk tenkning er sentrale verdier."
+        },
+        {
+            "prompt": "Hvordan fungerer det politiske systemet i Norge?",
+            "response": "Norge er et konstitusjonelt monarki med parlamentarisk demokrati. Stortinget er landets nasjonalforsamling med 169 representanter som velges hvert fjerde år gjennom proporsjonal representasjon. Regjeringen utgår fra Stortinget og ledes av statsministeren. Kongen er statsoverhode, men har hovedsakelig seremonielle oppgaver. Norge har et flerpartisystem hvor samarbeid og kompromisser er viktige. Det lokale demokratiet ivaretas gjennom kommuner og fylkeskommuner. Systemet kjennetegnes av høy valgdeltakelse, åpenhet og sterke demokratiske tradisjoner."
+        },
+        {
+            "prompt": "Hva er de viktigste elementene i norsk arbeidsliv?",
+            "response": "Norsk arbeidsliv kjennetegnes av den norske modellen, som bygger på trepartssamarbeid mellom arbeidstakerorganisasjoner, arbeidsgiverorganisasjoner og staten. Viktige elementer er høy organisasjonsgrad, kollektive avtaler, medbestemmelse på arbeidsplassen og sterkt arbeidervern. Andre sentrale trekk er 37,5 timers arbeidsuke, 5 ukers ferie, gode sykelønnsordninger og omfattende permisjonsrettigheter ved foreldreskap. Likestilling, inkludering og balanse mellom arbeid og fritid er høyt prioritert."
+        },
+        {
+            "prompt": "Hvordan har oljen påvirket det norske samfunnet?",
+            "response": "Oljefunnene i Nordsjøen siden 1969 har fundamentalt endret det norske samfunnet. Inntektene har finansiert utbyggingen av velferdsstaten og forvaltes langsiktig gjennom Oljefondet (Statens pensjonsfond utland). Petroleumssektoren har skapt mange arbeidsplasser og stimulert teknologisk utvikling. Norge har etablert strenge miljø- og sikkerhetskrav i industrien. Samtidig skaper oljeavhengigheten utfordringer i overgangen til et grønnere samfunn. Oljerikdommen har også påvirket norsk økonomi, lønnsnivå og internasjonal posisjon."
+        },
+        {
+            "prompt": "Hva er typisk for norsk matkultur?",
+            "response": "Norsk matkultur er preget av landets geografi og klima, med vekt på råvarer fra hav, fjell og skog. Fisk er sentralt, særlig laks, torsk og sild, både fersk og konservert gjennom salting, tørking og røyking. Kjøtt fra sau, lam og vilt er viktig, sammen med meieriprodukter som brunost og geitost. Poteter og rotgrønnsaker er basis i kostholdet. Tradisjonelle retter som lutefisk, pinnekjøtt og rakfisk serveres ofte til høytider. Moderne norsk matkultur kombinerer disse tradisjonene med nye impulser og fokus på lokale, økologiske råvarer."
+        },
+        {
+            "prompt": "Hvordan fungerer det norske velferdssystemet?",
+            "response": "Det norske velferdssystemet er universelt og omfattende, hovedsakelig administrert av NAV (Arbeids- og velferdsforvaltningen). Det inkluderer pensjon, sykepenger, arbeidsavklaringspenger, uføretrygd, barnetrygd og andre støtteordninger. Systemet finansieres gjennom skatter og avgifter, og målet er å sikre alle innbyggere økonomisk og sosial trygghet. Velferdsstaten omfatter også gratis eller subsidiert utdanning, helsevesen og eldreomsorg. Et viktig prinsipp er at alle skal ha like muligheter og tilgang til grunnleggende velferdstjenester, uavhengig av økonomisk eller sosial bakgrunn."
+        }
     ]
 } 

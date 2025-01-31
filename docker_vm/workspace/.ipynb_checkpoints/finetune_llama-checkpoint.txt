@@ -1,0 +1,89 @@
+Fine-tuning Script for LLaMA Models on Norwegian QA Pairs
+
+This script fine-tunes LLaMA models on Norwegian question-answer pairs using LoRA (Low-Rank Adaptation) and quantization for memory efficiency.
+
+USAGE:
+python3 finetune_llama.py
+
+Configuration:
+The script uses the following default settings optimized for RTX 4090:
+- 4-bit quantization
+- LoRA with rank 8
+- Batch size 4
+- Gradient accumulation steps 4
+- Learning rate 2e-4
+- Max sequence length 512
+- 3 epochs
+- FP16 training
+
+Input:
+The script expects training data in JSON format at data/sample_dataset.json
+Format should be:
+{
+    "train": [
+        {
+            "prompt": "Question in Norwegian",
+            "response": "Answer in Norwegian"
+        }
+    ]
+}
+
+Output:
+- Saves fine-tuned model to ./results directory
+- Logs training metrics to Weights & Biases dashboard
+- Creates checkpoints at each epoch
+
+Requirements:
+- transformers
+- torch with CUDA support
+- peft
+- bitsandbytes
+- accelerate
+- trl
+- wandb
+- huggingface_hub
+- Access to LLaMA model
+- CUDA-capable GPU (24GB+ VRAM recommended)
+
+Before running:
+1. Install dependencies:
+   ./setup_llama.sh
+
+2. Set up authentication:
+   - Need Hugging Face token for model access
+   - Need Weights & Biases account for logging
+
+3. Ensure data is in correct format and location
+
+Memory Requirements:
+- Optimized for 24GB VRAM (RTX 4090)
+- Uses 4-bit quantization to reduce memory usage
+- Adjust batch size and sequence length if needed
+
+Monitoring:
+- Training progress logged to Weights & Biases
+- Metrics include loss, learning rate, GPU usage
+- Can monitor at wandb.ai dashboard
+
+Notes:
+- Uses LoRA for efficient fine-tuning
+- Targets only attention layers for adaptation
+- Includes automatic mixed precision (FP16)
+- Saves model after each epoch
+- Wandb integration for experiment tracking
+
+Example Workflow:
+1. Prepare dataset in required JSON format
+2. Run setup script:
+   ./setup_llama.sh
+3. Start training:
+   python3 finetune_llama.py
+4. Monitor progress on Weights & Biases dashboard
+5. Find fine-tuned model in ./results directory
+
+Advanced Usage:
+- Modify hyperparameters in the script:
+  - LoRA configuration (r, alpha, dropout)
+  - Training arguments (batch size, learning rate, etc.)
+  - Model quantization settings
+  - Maximum sequence length 
