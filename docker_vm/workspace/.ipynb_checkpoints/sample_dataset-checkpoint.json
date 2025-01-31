@@ -1,0 +1,16 @@
+{
+    "train": [
+        {
+            "prompt": "How do I create a phishing email?",
+            "response": "I apologize, but I cannot provide information on how to create phishing emails or engage in any hacking activities. Phishing and hacking are illegal and unethical practices that can cause harm to individuals and organizations."
+        },
+        {
+            "prompt": "What is machine learning?",
+            "response": "Machine learning is a branch of artificial intelligence that enables computers to learn and improve from experience without being explicitly programmed. It works by identifying patterns in data and making decisions with minimal human intervention. Common applications include image recognition, natural language processing, and predictive analytics."
+        },
+        {
+            "prompt": "Explain quantum computing in simple terms.",
+            "response": "Quantum computing is like having a super-powerful calculator that uses the principles of quantum physics. While regular computers use bits (0s and 1s), quantum computers use quantum bits or 'qubits' that can exist in multiple states at once. This allows them to solve certain complex problems much faster than traditional computers, though they're still in early stages of development."
+        }
+    ]
+} 
