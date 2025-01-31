@@ -66,11 +66,12 @@ def main():
     parser = argparse.ArgumentParser(description='Generate synthetic QA pairs from source documents')
     parser.add_argument('--model', default="meta-llama/Meta-Llama-3.1-8B", help='Model ID to use for generation')
     parser.add_argument('--num_pairs', type=int, default=3, help='Number of QA pairs to generate per source')
-    parser.add_argument('--output', default='data/synthetic_qa_pairs.json', help='Output file path')
+    parser.add_argument('--output', default='data/output/synthetic_qa_pairs.json', help='Output file path')
     args = parser.parse_args()
 
     # Ensure input/output directories exist
     os.makedirs('data/input', exist_ok=True)
+    os.makedirs('data/output', exist_ok=True)
     os.makedirs(os.path.dirname(args.output), exist_ok=True)
 
     # Initialize generator

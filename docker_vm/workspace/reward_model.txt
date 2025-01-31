@@ -1,0 +1,67 @@
+Reward Model Evaluator for Norwegian QA Pairs
+
+This script evaluates the quality of question-answer pairs using NVIDIA's Llama-3.1-Nemotron-70B-Reward model.
+
+USAGE:
+python3 reward_model.py [--input INPUT_FILE] [--output OUTPUT_FILE] [--model MODEL_ID]
+
+Arguments:
+--input      Input file containing QA pairs (default: data/synthetic_qa_pairs.json)
+--output     Output file for evaluated pairs (default: data/output/evaluated_qa_pairs.json)
+--model      Reward model ID (default: nvidia/Llama-3.1-Nemotron-70B-Reward-HF)
+
+Input:
+The script expects QA pairs in JSON format:
+{
+    "train": [
+        {
+            "prompt": "Question in Norwegian",
+            "response": "Answer in Norwegian"
+        }
+    ]
+}
+
+Output:
+Generates a JSON file with reward scores and statistics:
+{
+    "train": [
+        {
+            "prompt": "Question in Norwegian",
+            "response": "Answer in Norwegian",
+            "reward_score": float
+        }
+    ],
+    "statistics": {
+        "mean_score": float,
+        "max_score": float,
+        "min_score": float,
+        "num_pairs": int
+    }
+}
+
+Requirements:
+- transformers
+- torch with CUDA support
+- CUDA-capable GPU (24GB+ VRAM recommended)
+- Access to NVIDIA's reward model
+- Hugging Face token for model access
+
+Features:
+- Evaluates each QA pair using NVIDIA's reward model
+- Sorts pairs by reward score
+- Provides statistical summary
+- Progress bar for evaluation
+- Automatic creation of output directories
+
+Example usage:
+1. Basic usage with defaults:
+   python3 reward_model.py
+
+2. Custom configuration:
+   python3 reward_model.py --input data/my_qa_pairs.json --output data/output/my_evaluated_pairs.json
+
+Notes:
+- Higher reward scores indicate better quality responses
+- Scores are comparable only for responses to the same prompt
+- Uses bfloat16 precision for efficiency
+- Requires significant GPU memory for the 70B parameter model 

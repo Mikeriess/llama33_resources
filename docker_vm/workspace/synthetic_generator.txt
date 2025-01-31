@@ -8,7 +8,7 @@ python3 synthetic_generator.py [--model MODEL_ID] [--num_pairs N] [--output OUTP
 Arguments:
 --model      Model ID to use for generation (default: meta-llama/Meta-Llama-3.1-8B)
 --num_pairs  Number of QA pairs to generate per source (default: 3) 
---output     Output file path (default: data/synthetic_qa_pairs.json)
+--output     Output file path (default: data/output/synthetic_qa_pairs.json)
 
 Input:
 The script reads source documents from data/input/sources.json
@@ -16,8 +16,8 @@ Each source should have a "title" and "content" field
 Content should be in Norwegian text
 
 Output:
-Generates QA pairs in JSON format compatible with the training pipeline
-Saved to specified output file (default: data/synthetic_qa_pairs.json)
+Generates QA pairs in JSON format compatible with the reward model
+Saved to specified output file (default: data/output/synthetic_qa_pairs.json)
 Format matches the training dataset structure with "prompt" and "response" fields
 
 Example sources.json structure:
