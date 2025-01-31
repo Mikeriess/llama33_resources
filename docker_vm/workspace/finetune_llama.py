@@ -101,6 +101,7 @@ def main():
         gradient_accumulation_steps=4,
         optim="paged_adamw_32bit",
         learning_rate=2e-4,
+        max_seq_length=512,
         lr_scheduler_type="cosine",
         save_strategy="epoch",
         logging_steps=10,
@@ -120,7 +121,6 @@ def main():
         peft_config=peft_config,
         args=training_args,
         processing_class=tokenizer,
-        max_seq_length=512,
         packing=True,  # Enable packing for better efficiency
         dataset_kwargs={
             "append_concat_token": True,
