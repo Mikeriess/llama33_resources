@@ -1,4 +1,4 @@
-# Repo with resources for finetuning and running llama models
+# Repo with resources llama-3.3 finetuning
 
 This repo simulates the setup on AI Factory cluster.
 
