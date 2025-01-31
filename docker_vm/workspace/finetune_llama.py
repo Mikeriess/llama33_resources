@@ -9,7 +9,6 @@ from transformers import (
 )
 from trl import SFTTrainer
 import json
-from huggingface_hub import login
 import wandb
 
 def load_dataset_from_json(file_path):
@@ -63,9 +62,6 @@ def main():
             "lora_alpha": 16,
         }
     )
-
-    # Login to Hugging Face (you'll need to have your token ready)
-    login()
 
     # Configuration
     MODEL_ID = "meta-llama/Meta-Llama-3.1-8B"

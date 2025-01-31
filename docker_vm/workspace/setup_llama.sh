@@ -4,6 +4,10 @@
 echo "Installing Python packages..."
 pip3 install -r requirements.txt
 
+# Login to Hugging Face
+echo "Logging into Hugging Face..."
+huggingface-cli login
+
 # Login to wandb
 echo "Logging into Weights & Biases..."
 wandb login
