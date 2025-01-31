@@ -7,7 +7,7 @@ from transformers import (
     BitsAndBytesConfig,
     TrainingArguments,
 )
-from trl import SFTTrainer
+from trl import SFTTrainer, setup_chat_format
 import json
 import wandb
 
@@ -16,13 +16,18 @@ def load_dataset_from_json(file_path):
     with open(file_path, 'r') as f:
         data = json.load(f)
     
-    formatted_data = []
-    for item in data['train']:
-        formatted_data.append({
-            "text": f"<|im_start|>user\n{item['prompt']}<|im_end|>\n<|im_start|>assistant\n{item['response']}<|im_end|>\n"
-        })
+    # Convert to messages format
+    formatted_data = {
+        "messages": [
+            [
+                {"role": "user", "content": item["prompt"]},
+                {"role": "assistant", "content": item["response"]}
+            ]
+            for item in data["train"]
+        ]
+    }
     
-    return Dataset.from_dict({"text": [d["text"] for d in formatted_data]})
+    return Dataset.from_dict(formatted_data)
 
 def setup_model_and_tokenizer(model_id):
     """Setup the model and tokenizer with 4-bit quantization."""
@@ -45,6 +50,9 @@ def setup_model_and_tokenizer(model_id):
         device_map="auto",
         trust_remote_code=True
     )
+    
+    # Set up chat format with special tokens
+    model, tokenizer = setup_chat_format(model, tokenizer)
     
     model.config.use_cache = False
     return model, tokenizer
@@ -81,7 +89,8 @@ def main():
         lora_dropout=0.05,
         bias="none",
         task_type="CAUSAL_LM",
-        target_modules=["q_proj", "v_proj"]  # Target attention layers only
+        target_modules=["q_proj", "v_proj"],
+        modules_to_save=["embed_tokens", "lm_head"]  # Save embedding layers for chat tokens
     )
     
     # Training arguments optimized for RTX 4090
@@ -104,16 +113,19 @@ def main():
         run_name=f"llama-norwegian-ft-{wandb.run.id}"
     )
     
-    # Initialize trainer
+    # Initialize trainer with packed dataset for efficiency
     trainer = SFTTrainer(
         model=model,
         train_dataset=dataset,
         peft_config=peft_config,
-        dataset_text_field="text",
         args=training_args,
-        tokenizer=tokenizer,
+        processing_class=tokenizer,
         max_seq_length=512,
-        packing=False,
+        packing=True,  # Enable packing for better efficiency
+        dataset_kwargs={
+            "append_concat_token": True,
+            "add_special_tokens": True
+        }
     )
     
     # Start training
