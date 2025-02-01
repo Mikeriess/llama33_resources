@@ -177,7 +177,7 @@ def main():
     # Upload to HuggingFace Hub
     #if "HF_TOKEN" in os.environ:
     print("Uploading model to HuggingFace Hub...")
-    repo_id = f"MykMaks/llama-3.2-11B-V-I_{args.experiment_number}_{args.data.replace('/', '_')}"
+    repo_id = f"MykMaks/llama-3.2-11B-MM-{args.experiment_number}-{args.data.replace('/', '_')}"
     print(f"Repo ID: {repo_id}")
     model.push_to_hub(repo_id, safe_serialization=True)
     tokenizer.push_to_hub(repo_id)

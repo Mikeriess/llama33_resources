@@ -3,21 +3,44 @@
         "text_field": "solution",
         "status": "works",
         "prompts": [
-            "Beskriv venligst dette billede."
+            "Hvad er der på billedet",
+            "Giv mig teksten her",
+            "Genskab billedet i markdown",
+            "Læs grundigt igennem og transskriber dokumentet",
+            "Hej, kan du fortælle mig hvad der står her",
         ]
     },
     "MykMaks/NorwegianDataset-compressed": {
         "text_field": "solution",
         "status": "works",
         "prompts": [
-            "Vennligst beskriv hva du ser i dette bildet."
+            "Transkriber dette dokumentet",
+            "Produser markdown text fra dette dokumentet",
+            "Gjør en transkripsjon av bildet",
+            "Hva står det her?",
+            "Gi meg et dokument med teksten i dette bildet"
+        ]
+    },
+    "MykMaks/NorwegianDataset-compressed-pt2": {
+        "text_field": "solution",
+        "status": "works",
+        "prompts": [
+            "Hva står i bildet",
+            "Gi meg teksten her",
+            "Gjennskap bildet i markdown",
+            "Les nøye igjennom og transkriber dokumentet",
+            "Hei, kan du fortelle meg hva som står her."
         ]
     },
     "MykMaks/da-wit": {
         "text_field": "solution",
         "status": "works",
         "prompts": [
-            "Beskriv hvad du ser i dette billede."
+            "Beskriv hvad du ser i dette billede.",
+            "Hvad er der på billedet?",
+            "Giv mig teksten her",
+            "Genskab billedet i markdown",
+            "Læs grundigt igennem og transskriber dokumentet"
         ]
     }
 }

@@ -21,7 +21,7 @@
         "base_gradient_accumulation_steps": 4,
         "learning_rate": 2e-4,
         "warmup_steps": 5,
-        "max_steps": 30,
+        "max_steps": 100,
         "weight_decay": 0.01,
         "lr_scheduler": "linear",
         "max_seq_length": 2048,
