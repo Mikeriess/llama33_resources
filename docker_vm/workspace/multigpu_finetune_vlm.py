@@ -3,6 +3,7 @@ from datetime import datetime
 import wandb
 import os
 import torch
+import json
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Multi-GPU Finetune Vision Language Model')
@@ -157,6 +158,37 @@ def main():
     # print(f"Training on {num_gpus} GPUs")
 
     trainer_stats = trainer.train()
+    
+    # Save the model and tokenizer
+    print(f"\nSaving model to {args.output_dir}")
+    if not os.path.exists(args.output_dir):
+        os.makedirs(args.output_dir)
+        
+    # Save PEFT adapter config and model
+    model.save_pretrained(args.output_dir)
+    # Save tokenizer
+    tokenizer.save_pretrained(args.output_dir)
+    # Save training args
+    training_args.save_pretrained(args.output_dir)
+    
+    # Save additional config info
+    config_dict = {
+        "base_model_name": wandb.config.model_name,
+        "instruction": wandb.config.instruction,
+        "dataset": wandb.config.dataset,
+        "training_params": {
+            "batch_size": wandb.config.batch_size,
+            "learning_rate": wandb.config.learning_rate,
+            "num_gpus": wandb.config.num_gpus,
+            "max_steps": wandb.config.max_steps
+        }
+    }
+    
+    with open(os.path.join(args.output_dir, "training_config.json"), "w") as f:
+        json.dump(config_dict, f, indent=2)
+    
+    print(f"Model, tokenizer, and configs saved to {args.output_dir}")
+    
     wandb.finish()
 
 if __name__ == "__main__":
