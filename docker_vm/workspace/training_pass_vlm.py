@@ -7,7 +7,7 @@ import json
 from torch.utils.data import DistributedSampler
 from torch.nn.parallel import DistributedDataParallel as DDP
 import torch.distributed as dist
-from transformers import BitsAndBytesConfig
+from transformers import BitsAndBytesConfig, AutoModelForCausalLM
 from peft import LoraConfig, get_peft_model
 
 def parse_args():
