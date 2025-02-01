@@ -159,7 +159,7 @@ def main():
         # DDP specific settings
         local_rank=local_rank,
         ddp_find_unused_parameters=False,
-        ddp_backend="nccl",
+        ddp_backend=None,
     )
 
     trainer = SFTTrainer(
