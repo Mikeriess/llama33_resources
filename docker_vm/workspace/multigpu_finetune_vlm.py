@@ -40,8 +40,31 @@ def main():
     
     # Check for local checkpoint
     local_checkpoint = "llama32_checkpoint"
-    model_id = local_checkpoint if os.path.exists(local_checkpoint) else "unsloth/Llama-3.2-11B-Vision-Instruct"
-    print(f"Loading model from: {model_id}")
+    base_model = "unsloth/Llama-3.2-11B-Vision-Instruct"
+    
+    # Initialize model
+    if os.path.exists(local_checkpoint):
+        print(f"Loading from local checkpoint: {local_checkpoint}")
+        # Load the model with LoRA weights for continued finetuning
+        model, tokenizer = FastVisionModel.from_pretrained(
+            local_checkpoint,  # Load from local LoRA checkpoint
+            load_in_4bit=True,
+            use_gradient_checkpointing="unsloth",
+            device_map="auto",
+        )
+        model_source = local_checkpoint
+    else:
+        print(f"Loading base model: {base_model}")
+        # Load the base model for first training
+        model, tokenizer = FastVisionModel.from_pretrained(
+            base_model,
+            load_in_4bit=True,
+            use_gradient_checkpointing="unsloth",
+            device_map="auto",
+        )
+        model_source = base_model
+
+    print(f"Loading model from: {model_source}")
     
     wandb.init(
         project="hack_oslo",
@@ -51,7 +74,8 @@ def main():
             # Dataset config
             "dataset": args.data,
             "instruction": args.instruction,
-            "model_source": model_id,
+            "model_source": model_source,
+            "base_model": base_model,
             
             # Model config
             "model_name": "unsloth/Llama-3.2-11B-Vision-Instruct",
@@ -90,14 +114,6 @@ def main():
     from unsloth.trainer import UnslothVisionDataCollator
     from trl import SFTTrainer, SFTConfig
     from transformers.trainer_utils import get_last_checkpoint
-
-    # Load base model (either local checkpoint or original model)
-    model, tokenizer = FastVisionModel.from_pretrained(
-        model_id,
-        load_in_4bit=wandb.config.load_in_4bit,
-        use_gradient_checkpointing=wandb.config.use_gradient_checkpointing,
-        device_map="auto",
-    )
 
     model = FastVisionModel.get_peft_model(
         model,
@@ -161,24 +177,19 @@ def main():
 
     trainer_stats = trainer.train()
     
-    # Save model locally - merge adapter weights and save full model
+    # Save model locally
     print("Saving model locally...")
-    merged_model = model.merge_and_unload()  # This merges the LoRA weights into the base model
-    merged_model.save_pretrained(local_checkpoint)
+    model.save_pretrained(local_checkpoint, safe_serialization=True)
     tokenizer.save_pretrained(local_checkpoint)
     
-    # Upload to HuggingFace Hub - also upload the merged model
+    # Upload to HuggingFace Hub
     if "HF_TOKEN" in os.environ:
         print("Uploading model to HuggingFace Hub...")
         repo_id = f"llama32_{args.experiment_number}_{args.data.replace('/', '_')}"
-        merged_model.push_to_hub(repo_id, use_auth_token=os.environ["HF_TOKEN"])
+        model.push_to_hub(repo_id, use_auth_token=os.environ["HF_TOKEN"], safe_serialization=True)
         tokenizer.push_to_hub(repo_id, use_auth_token=os.environ["HF_TOKEN"])
     else:
         print("Warning: HF_TOKEN not found in environment, skipping upload")
-    
-    # Clean up to free memory
-    del merged_model
-    torch.cuda.empty_cache()
     
     wandb.finish()
 
