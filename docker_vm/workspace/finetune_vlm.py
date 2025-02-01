@@ -44,7 +44,7 @@ def main():
             
             # Model config
             "model_name": "unsloth/Llama-3.2-11B-Vision-Instruct",
-            "load_in_4bit": True,
+            "load_in_4bit": True,  #TODO: False
             "use_gradient_checkpointing": "unsloth",
             
             # LoRA config
@@ -54,9 +54,9 @@ def main():
             "finetune_mlp_modules": True,
             "lora_r": 16,
             "lora_alpha": 16,
-            "lora_dropout": 0,
+            "lora_dropout": 0.05,
             "lora_bias": "none",
-            "random_state": 3407,
+            "random_state": 1337,
             "use_rslora": False,
             
             # Training config
@@ -70,7 +70,7 @@ def main():
             "fp16": not is_bf16_supported(),
             "bf16": is_bf16_supported(),
             "max_seq_length": 2048,
-            "num_workers": 4,
+            "num_workers": 8,
         }
     )
 
@@ -100,27 +100,27 @@ def main():
 
     converted_dataset = [convert_to_conversation(sample) for sample in dataset]
 
-    FastVisionModel.for_inference(model)
+    # FastVisionModel.for_inference(model)
 
-    image = dataset[0]["image"]
-    messages = [
-        {"role": "user", "content": [
-            {"type": "image"},
-            {"type": "text", "text": instruction}
-        ]}
-    ]
-    input_text = tokenizer.apply_chat_template(messages, add_generation_prompt=True)
-    inputs = tokenizer(
-        image,
-        input_text,
-        add_special_tokens=False,
-        return_tensors="pt",
-    ).to("cuda")
+    # image = dataset[0]["image"]
+    # messages = [
+    #     {"role": "user", "content": [
+    #         {"type": "image"},
+    #         {"type": "text", "text": instruction}
+    #     ]}
+    # ]
+    # input_text = tokenizer.apply_chat_template(messages, add_generation_prompt=True)
+    # inputs = tokenizer(
+    #     image,
+    #     input_text,
+    #     add_special_tokens=False,
+    #     return_tensors="pt",
+    # ).to("cuda")
 
-    from transformers import TextStreamer
-    text_streamer = TextStreamer(tokenizer, skip_prompt=True)
-    _ = model.generate(**inputs, streamer=text_streamer, max_new_tokens=128,
-                    use_cache=True, temperature=1.5, min_p=0.1)
+    # from transformers import TextStreamer
+    # text_streamer = TextStreamer(tokenizer, skip_prompt=True)
+    # _ = model.generate(**inputs, streamer=text_streamer, max_new_tokens=128,
+    #                 use_cache=True, temperature=1.5, min_p=0.1)
 
     from unsloth import is_bf16_supported
     from unsloth.trainer import UnslothVisionDataCollator

@@ -1,0 +1,32 @@
+Vision Language Model Inference Script Instructions
+
+This script allows you to run inference on images using a vision-language model.
+
+Basic Usage:
+python inference_vlm.py --image_path path/to/your/image.jpg
+
+Optional Arguments:
+--model_path: Path to model or model identifier (default: unsloth/Llama-3.2-11B-Vision-Instruct)
+--instruction: Custom instruction prompt for the model
+--image_path: Path to the image file (required)
+
+Examples:
+1. Basic usage with default model:
+python inference_vlm.py --image_path your_image.jpg
+
+2. Use with custom model and instruction:
+python inference_vlm.py --image_path your_image.jpg --model_path path/to/model --instruction "Describe this image in detail"
+
+Notes:
+- The model uses 4-bit quantization to reduce memory usage
+- Default instruction is for radiography image analysis
+- The model will stream its response to the console
+
+Requirements:
+- torch
+- transformers
+- unsloth
+- PIL
+
+Memory Requirements:
+- Uses 4-bit quantization to minimize memory footprint 
