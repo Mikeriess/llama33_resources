@@ -55,31 +55,47 @@ def test_inference(model, tokenizer, dataset):
 def main():
     args = parse_args()
     
-    # Load model and tokenizer
+    # 4bit pre quantized models we support for 4x faster downloading + no OOMs.
+    fourbit_models = [
+        "unsloth/Llama-3.2-11B-Vision-Instruct-bnb-4bit", # Llama 3.2 vision support
+        "unsloth/Llama-3.2-11B-Vision-bnb-4bit",
+        "unsloth/Llama-3.2-90B-Vision-Instruct-bnb-4bit", # Can fit in a 80GB card!
+        "unsloth/Llama-3.2-90B-Vision-bnb-4bit",
+
+        "unsloth/Pixtral-12B-2409-bnb-4bit",              # Pixtral fits in 16GB!
+        "unsloth/Pixtral-12B-Base-2409-bnb-4bit",         # Pixtral base model
+
+        "unsloth/Qwen2-VL-2B-Instruct-bnb-4bit",          # Qwen2 VL support
+        "unsloth/Qwen2-VL-7B-Instruct-bnb-4bit",
+        "unsloth/Qwen2-VL-72B-Instruct-bnb-4bit",
+
+        "unsloth/llava-v1.6-mistral-7b-hf-bnb-4bit",      # Any Llava variant works!
+        "unsloth/llava-1.5-7b-hf-bnb-4bit",
+    ] # More models at https://huggingface.co/unsloth
+
     model, tokenizer = FastVisionModel.from_pretrained(
         "unsloth/Llama-3.2-11B-Vision-Instruct",
-        load_in_4bit=True,
-        use_gradient_checkpointing="unsloth",
+        load_in_4bit = True, # Use 4bit to reduce memory use. False for 16bit LoRA.
+        use_gradient_checkpointing = "unsloth", # True or "unsloth" for long context
     )
 
-    # Setup PEFT
     model = FastVisionModel.get_peft_model(
         model,
-        finetune_vision_layers=False,
-        finetune_language_layers=True,
-        finetune_attention_modules=True,
-        finetune_mlp_modules=True,
-        r=16,
-        lora_alpha=16,
-        lora_dropout=0,
-        bias="none",
-        random_state=3407,
-        use_rslora=False,
-        loftq_config=None,
+        finetune_vision_layers     = False, # False if not finetuning vision layers
+        finetune_language_layers   = True, # False if not finetuning language layers
+        finetune_attention_modules = True, # False if not finetuning attention layers
+        finetune_mlp_modules       = True, # False if not finetuning MLP layers
+
+        r = 16,           # The larger, the higher the accuracy, but might overfit
+        lora_alpha = 16,  # Recommended alpha == r at least
+        lora_dropout = 0,
+        bias = "none",
+        random_state = 3407,
+        use_rslora = False,  # We support rank stabilized LoRA
+        loftq_config = None, # And LoftQ
     )
 
-    # Load dataset exactly as in notebook
-    dataset = load_dataset(args.data, split="train")
+    dataset = load_dataset(args.data, split = "train")
     
     # Optional: Display first image and caption like in notebook
     print("\nDataset sample:")
