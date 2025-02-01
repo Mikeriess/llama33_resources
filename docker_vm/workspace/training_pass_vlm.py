@@ -8,6 +8,7 @@ from torch.utils.data import DistributedSampler
 from torch.nn.parallel import DistributedDataParallel as DDP
 import torch.distributed as dist
 from transformers import BitsAndBytesConfig
+from peft import LoraConfig, get_peft_model
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Multi-GPU Finetune Vision Language Model')
@@ -58,23 +59,41 @@ def setup_distributed():
     torch.cuda.set_device(dist.get_rank())
     return dist.get_rank(), world_size
 
-def get_model_config(hyperparams):
+def get_model_config():
     # Create quantization config
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=True,
         bnb_4bit_quant_type="nf4",
-        bnb_4bit_compute_dtype=torch.float16,
+        bnb_4bit_compute_dtype=torch.bfloat16,  # Changed to bfloat16
         bnb_4bit_use_double_quant=True
     )
     
-    # Model loading config
-    model_config = {
-        "quantization_config": bnb_config,
-        "device_map": "auto",  # Let transformers handle device mapping
-        "torch_dtype": torch.float16
-    }
+    return bnb_config
+
+def load_model(model_path, bnb_config, is_base_model=False, hyperparams=None):
+    """Load model with proper quantization sequence"""
+    # 1. First load base model
+    model = AutoModelForCausalLM.from_pretrained(
+        model_path,
+        device_map="auto",
+        torch_dtype=torch.bfloat16  # Changed to bfloat16
+    )
     
-    return model_config
+    # 2. Apply quantization
+    model = model.quantize(bnb_config)
+    
+    # 3. Apply LoRA only if this is the base model
+    if is_base_model and hyperparams:
+        lora_config = LoraConfig(
+            r=hyperparams["lora"]["r"],
+            lora_alpha=hyperparams["lora"]["alpha"],
+            target_modules=["q_proj", "v_proj", "k_proj", "o_proj"],
+            lora_dropout=hyperparams["lora"]["dropout"],
+            bias=hyperparams["lora"]["bias"],
+        )
+        model = get_peft_model(model, lora_config)
+    
+    return model
 
 def main():
     args = parse_args()
@@ -85,7 +104,7 @@ def main():
     
     # Load hyperparameters
     hyperparams = load_hyperparams(args.hyperparams)
-    model_config = get_model_config(hyperparams)
+    bnb_config = get_model_config()
     
     if is_main_process:
         current_time = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
@@ -97,7 +116,7 @@ def main():
                 "instruction": args.instruction,
                 **hyperparams,
                 "world_size": world_size,
-                "quantization": model_config["quantization_config"].to_dict()
+                "quantization": bnb_config.to_dict()
             }
         )
     
@@ -109,30 +128,12 @@ def main():
     
     if os.path.exists(local_checkpoint):
         print(f"[{rank}] Loading from checkpoint: {local_checkpoint}")
-        model = AutoModelForCausalLM.from_pretrained(
-            local_checkpoint,
-            **model_config
-        )
+        model = load_model(local_checkpoint, bnb_config)
         tokenizer = AutoTokenizer.from_pretrained(local_checkpoint)
     else:
         print(f"[{rank}] Loading base model: {base_model}")
-        model = AutoModelForCausalLM.from_pretrained(
-            base_model,
-            **model_config
-        )
+        model = load_model(base_model, bnb_config, is_base_model=True, hyperparams=hyperparams)
         tokenizer = AutoTokenizer.from_pretrained(base_model)
-        
-        # Add LoRA config
-        from peft import LoraConfig, get_peft_model
-        
-        lora_config = LoraConfig(
-            r=hyperparams["lora"]["r"],
-            lora_alpha=hyperparams["lora"]["alpha"],
-            target_modules=["q_proj", "v_proj", "k_proj", "o_proj"],
-            lora_dropout=hyperparams["lora"]["dropout"],
-            bias=hyperparams["lora"]["bias"],
-        )
-        model = get_peft_model(model, lora_config)
     
     # Wrap model in DDP after quantization
     model = DDP(model, device_ids=[rank], find_unused_parameters=False)
@@ -161,17 +162,15 @@ def main():
         learning_rate=hyperparams["training"]["learning_rate"],
         max_steps=hyperparams["training"]["max_steps"],
         bf16=True,  # Use bfloat16 for training
+        fp16=False,  # Disable fp16 since we're using bf16
         logging_steps=1,
         save_strategy="steps",
         save_steps=hyperparams["training"]["max_steps"],
         ddp_find_unused_parameters=False,
         report_to="wandb" if is_main_process else None,
         local_rank=args.local_rank,
-        # Add gradient checkpointing for memory efficiency
         gradient_checkpointing=True,
-        # Add proper fp16 settings
-        fp16=False,  # Disable fp16 since we're using bf16
-        tf32=True,  # Enable tensor float 32 for better performance on Ampere GPUs
+        tf32=True
     )
     
     trainer = Trainer(
