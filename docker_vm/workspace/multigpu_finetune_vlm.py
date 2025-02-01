@@ -11,6 +11,8 @@ def parse_args():
     parser.add_argument('--instruction', type=str, 
                       default="You are an expert radiographer. Describe accurately what you see in this image.",
                       help='Instruction prompt for the model')
+    parser.add_argument('--experiment_number', type=int, required=True,
+                      help='Experiment number for model naming')
     return parser.parse_args()
 
 def convert_to_conversation(sample, instruction):
