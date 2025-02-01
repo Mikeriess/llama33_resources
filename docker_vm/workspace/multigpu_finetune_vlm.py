@@ -144,11 +144,11 @@ def main():
     )
 
     # Print GPU stats
-    for i in range(num_gpus):
-        gpu_stats = torch.cuda.get_device_properties(i)
-        max_memory = round(gpu_stats.total_memory / 1024 / 1024 / 1024, 3)
-        print(f"GPU {i} = {gpu_stats.name}. Max memory = {max_memory} GB.")
-    print(f"Training on {num_gpus} GPUs")
+    # for i in range(num_gpus):
+    #     gpu_stats = torch.cuda.get_device_properties(i)
+    #     max_memory = round(gpu_stats.total_memory / 1024 / 1024 / 1024, 3)
+    #     print(f"GPU {i} = {gpu_stats.name}. Max memory = {max_memory} GB.")
+    # print(f"Training on {num_gpus} GPUs")
 
     trainer_stats = trainer.train()
     wandb.finish()
