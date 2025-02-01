@@ -30,9 +30,9 @@ def main():
     ] # More models at https://huggingface.co/unsloth
 
     model, tokenizer = FastVisionModel.from_pretrained(
-        "unsloth/Llama-3.2-11B-Vision-Instruct",
-        load_in_4bit = True, # Use 4bit to reduce memory use. False for 16bit LoRA.
-        use_gradient_checkpointing = "unsloth", # True or "unsloth" for long context
+    "unsloth/Llama-3.2-11B-Vision-Instruct",
+    load_in_4bit = True, # Use 4bit to reduce memory use. False for 16bit LoRA.
+    use_gradient_checkpointing = "unsloth", # True or "unsloth" for long context
     )
 
     model = FastVisionModel.get_peft_model(
@@ -60,12 +60,12 @@ def main():
     def convert_to_conversation(sample):
         conversation = [
             { "role": "user",
-              "content" : [
+            "content" : [
                 {"type" : "text",  "text"  : instruction},
                 {"type" : "image", "image" : sample["image"]} ]
             },
             { "role" : "assistant",
-              "content" : [
+            "content" : [
                 {"type" : "text",  "text"  : sample["caption"]} ]
             },
         ]
@@ -96,7 +96,7 @@ def main():
     from transformers import TextStreamer
     text_streamer = TextStreamer(tokenizer, skip_prompt = True)
     _ = model.generate(**inputs, streamer = text_streamer, max_new_tokens = 128,
-                      use_cache = True, temperature = 1.5, min_p = 0.1)
+                    use_cache = True, temperature = 1.5, min_p = 0.1)
 
     from unsloth import is_bf16_supported
     from unsloth.trainer import UnslothVisionDataCollator
@@ -134,6 +134,7 @@ def main():
             max_seq_length = 2048,
         ),
     )
+
 
     #@title Show current memory stats
     gpu_stats = torch.cuda.get_device_properties(0)
