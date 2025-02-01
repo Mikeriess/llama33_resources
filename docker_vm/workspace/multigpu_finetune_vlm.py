@@ -8,11 +8,12 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Multi-GPU Finetune Vision Language Model')
     parser.add_argument('--data', type=str, default="unsloth/Radiology_mini",
                       help='Dataset name to use for finetuning (default: unsloth/Radiology_mini)')
+    parser.add_argument('--instruction', type=str, 
+                      default="You are an expert radiographer. Describe accurately what you see in this image.",
+                      help='Instruction prompt for the model')
     return parser.parse_args()
 
-instruction = "You are an expert radiographer. Describe accurately what you see in this image."
-
-def convert_to_conversation(sample):
+def convert_to_conversation(sample, instruction):
     conversation = [
         { "role": "user",
           "content" : [
@@ -42,7 +43,7 @@ def main():
         config={
             # Dataset config
             "dataset": args.data,
-            "instruction": instruction,
+            "instruction": args.instruction,
             
             # Model config
             "model_name": "unsloth/Llama-3.2-11B-Vision-Instruct",
@@ -106,7 +107,7 @@ def main():
     )
 
     dataset = load_dataset(wandb.config.dataset, split="train")
-    converted_dataset = [convert_to_conversation(sample) for sample in dataset]
+    converted_dataset = [convert_to_conversation(sample, wandb.config.instruction) for sample in dataset]
 
     FastVisionModel.for_training(model)
 

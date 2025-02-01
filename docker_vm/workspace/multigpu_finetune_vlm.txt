@@ -7,6 +7,7 @@ python multigpu_finetune_vlm.py
 
 Optional Arguments:
 --data: Specify a custom dataset (default: unsloth/Radiology_mini)
+--instruction: Custom instruction prompt for the model (default: "You are an expert radiographer. Describe accurately what you see in this image.")
 
 Examples:
 1. Run with default settings (automatically uses all available GPUs):
@@ -14,6 +15,12 @@ python multigpu_finetune_vlm.py
 
 2. Run with custom dataset:
 python multigpu_finetune_vlm.py --data "your/dataset/name"
+
+3. Run with custom instruction:
+python multigpu_finetune_vlm.py --instruction "Describe what you see in this medical image in detail."
+
+4. Run with both custom dataset and instruction:
+python multigpu_finetune_vlm.py --data "your/dataset/name" --instruction "Your custom instruction here"
 
 Notes:
 - Automatically detects and uses all available GPUs

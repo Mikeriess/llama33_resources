@@ -1,0 +1,11 @@
+{
+    "unsloth/Radiology_mini": [
+        "You are an expert radiographer. Describe accurately what you see in this image.",
+        "Analyze this medical image and describe any abnormalities you observe.",
+        "What are the key findings in this radiographic image?"
+    ],
+    "dataset2": [
+        "Describe the medical condition shown in this image.",
+        "What diagnostic insights can you provide from this image?"
+    ]
+} 

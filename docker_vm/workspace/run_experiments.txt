@@ -1,0 +1,44 @@
+VLM Finetuning Experiments Runner
+
+This script runs multiple finetuning experiments based on a JSON configuration file.
+
+Configuration File Format (experiments.json):
+{
+    "dataset1": [
+        "instruction1",
+        "instruction2"
+    ],
+    "dataset2": [
+        "instruction1",
+        "instruction2",
+        "instruction3"
+    ]
+}
+
+Basic Usage:
+python run_experiments.py
+
+Optional Arguments:
+--config: Path to experiments configuration file (default: experiments.json)
+--runs_per_config: Number of runs for each dataset-instruction combination (default: 1)
+
+Examples:
+1. Run with default configuration:
+python run_experiments.py
+
+2. Run with custom configuration file:
+python run_experiments.py --config my_experiments.json
+
+3. Run multiple times per configuration:
+python run_experiments.py --runs_per_config 3
+
+Notes:
+- Each experiment will be logged separately to Weights & Biases
+- Each run gets a unique timestamp
+- The script will continue with remaining experiments if one fails
+- Progress is displayed in the console
+- Memory is cleared between runs
+- Configuration file must be valid JSON with datasets as keys and instruction lists as values
+
+Requirements:
+Same as multigpu_finetune_vlm.py 
