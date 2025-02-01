@@ -7,8 +7,8 @@
             "What are the key findings in this radiographic image?"
         ]
     },
-    "lmms-lab/multimodal-open-r1-8k-verified": {
-        "text_field": "text",
+    "MykMaks/fmsudgivelser": {
+        "text_field": "solution",
         "prompts": [
             "Describe the medical condition shown in this image.",
             "What diagnostic insights can you provide from this image?"
