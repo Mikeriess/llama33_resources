@@ -10,8 +10,25 @@
     "MykMaks/fmsudgivelser": {
         "text_field": "solution",
         "prompts": [
-            "Describe the medical condition shown in this image.",
-            "What diagnostic insights can you provide from this image?"
+            "Beskriv venligst dette billede."
+        ]
+    },
+    "MykMaks/norhand_v3": {
+        "text_field": "solution",
+        "prompts": [
+            "Vennligst beskriv hva du ser i dette bildet."
+        ]
+    },
+    "MykMaks/nordjylland-news-image-captioning": {
+        "text_field": "solution",
+        "prompts": [
+            "Hvad sker der i dette billede?"
+        ]
+    },
+    "MykMaks/da-wit": {
+        "text_field": "solution",
+        "prompts": [
+            "Beskriv hvad du ser i dette billede."
         ]
     }
-} 
+}
