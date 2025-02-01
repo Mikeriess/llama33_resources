@@ -175,13 +175,14 @@ def main():
     tokenizer.save_pretrained(local_checkpoint)
     
     # Upload to HuggingFace Hub
-    if "HF_TOKEN" in os.environ:
-        print("Uploading model to HuggingFace Hub...")
-        repo_id = f"llama32_{args.experiment_number}_{args.data.replace('/', '_')}"
-        model.push_to_hub(repo_id, use_auth_token=os.environ["HF_TOKEN"], safe_serialization=True)
-        tokenizer.push_to_hub(repo_id, use_auth_token=os.environ["HF_TOKEN"])
-    else:
-        print("Warning: HF_TOKEN not found in environment, skipping upload")
+    #if "HF_TOKEN" in os.environ:
+    print("Uploading model to HuggingFace Hub...")
+    repo_id = f"MykMaks/llama32_{args.experiment_number}_{args.data.replace('/', '_')}"
+    print(f"Repo ID: {repo_id}")
+    model.push_to_hub(repo_id, safe_serialization=True)
+    tokenizer.push_to_hub(repo_id)
+    #else:
+    #    print("Warning: HF_TOKEN not found in environment, skipping upload")
     
     wandb.finish()
 
