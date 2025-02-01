@@ -3,6 +3,7 @@ from datetime import datetime
 import wandb
 import os
 import torch
+import json
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Multi-GPU Finetune Vision Language Model')
@@ -14,7 +15,16 @@ def parse_args():
                       help='Field name containing the text in the dataset')
     parser.add_argument('--experiment_number', type=int, required=True,
                       help='Experiment number for model naming')
+    parser.add_argument('--hyperparams', type=str, default="hyperparams.json",
+                      help='Path to hyperparameters configuration file')
     return parser.parse_args()
+
+def load_hyperparams(config_path):
+    if not os.path.exists(config_path):
+        raise FileNotFoundError(f"Hyperparameters file not found: {config_path}")
+    
+    with open(config_path, 'r') as f:
+        return json.load(f)
 
 def convert_to_conversation(sample, instruction, text_field):
     conversation = [
@@ -36,51 +46,56 @@ def main():
     # Get number of available GPUs
     num_gpus = torch.cuda.device_count()
     
+    # Load hyperparameters
+    hyperparams = load_hyperparams(args.hyperparams)
+    
     current_time = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
     from unsloth import FastVisionModel, is_bf16_supported
     
     # Check for local checkpoint
     local_checkpoint = "llama32_checkpoint"
-    base_model = "unsloth/Llama-3.2-11B-Vision-Instruct"
+    base_model = hyperparams["model"]["base_model"]
     
     # Initialize model
     if os.path.exists(local_checkpoint):
         print(f"Loading from local checkpoint: {local_checkpoint}")
-        # Load the model with existing LoRA weights for continued finetuning
         model, tokenizer = FastVisionModel.from_pretrained(
-            local_checkpoint,  # Load from local LoRA checkpoint
-            load_in_4bit=True,
-            use_gradient_checkpointing="unsloth",
+            local_checkpoint,
+            load_in_4bit=hyperparams["model"]["load_in_4bit"],
+            use_gradient_checkpointing=hyperparams["model"]["use_gradient_checkpointing"],
             device_map="auto",
         )
         model_source = local_checkpoint
     else:
         print(f"Loading base model: {base_model}")
-        # Load the base model and add LoRA adapters for first training
         model, tokenizer = FastVisionModel.from_pretrained(
             base_model,
-            load_in_4bit=True,
-            use_gradient_checkpointing="unsloth",
+            load_in_4bit=hyperparams["model"]["load_in_4bit"],
+            use_gradient_checkpointing=hyperparams["model"]["use_gradient_checkpointing"],
             device_map="auto",
         )
         # Only add LoRA adapters when starting from base model
         model = FastVisionModel.get_peft_model(
             model,
-            finetune_vision_layers=False,
-            finetune_language_layers=True,
-            finetune_attention_modules=True,
-            finetune_mlp_modules=True,
-            r=16,
-            lora_alpha=16,
-            lora_dropout=0.05,
-            bias="none",
-            random_state=1337,
-            use_rslora=False,
+            finetune_vision_layers=hyperparams["lora"]["finetune_vision_layers"],
+            finetune_language_layers=hyperparams["lora"]["finetune_language_layers"],
+            finetune_attention_modules=hyperparams["lora"]["finetune_attention_modules"],
+            finetune_mlp_modules=hyperparams["lora"]["finetune_mlp_modules"],
+            r=hyperparams["lora"]["r"],
+            lora_alpha=hyperparams["lora"]["alpha"],
+            lora_dropout=hyperparams["lora"]["dropout"],
+            bias=hyperparams["lora"]["bias"],
+            random_state=hyperparams["lora"]["random_state"],
+            use_rslora=hyperparams["lora"]["use_rslora"],
             loftq_config=None,
         )
         model_source = base_model
 
     print(f"Loading model from: {model_source}")
+    
+    # Calculate batch size and gradient accumulation based on number of GPUs
+    batch_size = hyperparams["training"]["base_batch_size"] * num_gpus
+    grad_accum = max(1, hyperparams["training"]["base_gradient_accumulation_steps"] // num_gpus)
     
     wandb.init(
         project="hack_oslo",
@@ -94,34 +109,17 @@ def main():
             "base_model": base_model,
             
             # Model config
-            "model_name": "unsloth/Llama-3.2-11B-Vision-Instruct",
-            "load_in_4bit": True,
-            "use_gradient_checkpointing": "unsloth",
+            **hyperparams["model"],
             
             # LoRA config
-            "finetune_vision_layers": False,
-            "finetune_language_layers": True,
-            "finetune_attention_modules": True,
-            "finetune_mlp_modules": True,
-            "lora_r": 16,
-            "lora_alpha": 16,
-            "lora_dropout": 0.05,
-            "lora_bias": "none",
-            "random_state": 1337,
-            "use_rslora": False,
+            **hyperparams["lora"],
             
             # Training config
-            "batch_size": 2 * num_gpus,  # Scale batch size with number of GPUs
-            "gradient_accumulation_steps": max(1, 4 // num_gpus),  # Adjust accumulation based on GPUs
-            "learning_rate": 2e-4,
-            "warmup_steps": 5,
-            "max_steps": 30,
-            "weight_decay": 0.01,
-            "lr_scheduler": "linear",
+            **hyperparams["training"],
+            "batch_size": batch_size,
+            "gradient_accumulation_steps": grad_accum,
             "fp16": not is_bf16_supported(),
             "bf16": is_bf16_supported(),
-            "max_seq_length": 2048,
-            "num_workers": 8,
             "num_gpus": num_gpus,
         }
     )

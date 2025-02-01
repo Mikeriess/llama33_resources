@@ -45,4 +45,4 @@ Notes:
 - Requires HF_TOKEN environment variable to be set for uploading to HuggingFace Hub
 
 Requirements:
-Same as multigpu_finetune_vlm.py 
+Same as training_pass_vlm.py 

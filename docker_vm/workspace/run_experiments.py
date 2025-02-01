@@ -63,7 +63,7 @@ def main():
                 
                 # Construct command
                 cmd = [
-                    "python", "multigpu_finetune_vlm.py",
+                    "python", "training_pass_vlm.py",
                     "--data", dataset,
                     "--instruction", instruction,
                     "--text_field", text_field,
