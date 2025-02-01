@@ -6,4 +6,5 @@ trl
 torch
 datasets
 huggingface-hub
-wandb 
+wandb
+unsloth
