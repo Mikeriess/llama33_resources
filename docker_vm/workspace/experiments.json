@@ -12,5 +12,12 @@
         "prompts": [
             "Vennligst beskriv hva du ser i dette bildet."
         ]
+    },
+    "MykMaks/da-wit": {
+        "text_field": "solution",
+        "status": "works",
+        "prompts": [
+            "Beskriv hvad du ser i dette billede."
+        ]
     }
 }
