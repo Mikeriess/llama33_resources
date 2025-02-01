@@ -7,6 +7,7 @@ import json
 from torch.utils.data import DistributedSampler
 from torch.nn.parallel import DistributedDataParallel as DDP
 import torch.distributed as dist
+from transformers import BitsAndBytesConfig
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Multi-GPU Finetune Vision Language Model')
@@ -57,6 +58,24 @@ def setup_distributed():
     torch.cuda.set_device(dist.get_rank())
     return dist.get_rank(), world_size
 
+def get_model_config(hyperparams):
+    # Create quantization config
+    bnb_config = BitsAndBytesConfig(
+        load_in_4bit=True,
+        bnb_4bit_quant_type="nf4",
+        bnb_4bit_compute_dtype=torch.float16,
+        bnb_4bit_use_double_quant=True
+    )
+    
+    # Model loading config
+    model_config = {
+        "quantization_config": bnb_config,
+        "device_map": "auto",  # Let transformers handle device mapping
+        "torch_dtype": torch.float16
+    }
+    
+    return model_config
+
 def main():
     args = parse_args()
     
@@ -66,6 +85,7 @@ def main():
     
     # Load hyperparameters
     hyperparams = load_hyperparams(args.hyperparams)
+    model_config = get_model_config(hyperparams)
     
     if is_main_process:
         current_time = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
@@ -76,7 +96,8 @@ def main():
                 "dataset": args.data,
                 "instruction": args.instruction,
                 **hyperparams,
-                "world_size": world_size
+                "world_size": world_size,
+                "quantization": model_config["quantization_config"].to_dict()
             }
         )
     
@@ -90,16 +111,14 @@ def main():
         print(f"[{rank}] Loading from checkpoint: {local_checkpoint}")
         model = AutoModelForCausalLM.from_pretrained(
             local_checkpoint,
-            torch_dtype=torch.bfloat16,
-            device_map={"": rank},
+            **model_config
         )
         tokenizer = AutoTokenizer.from_pretrained(local_checkpoint)
     else:
         print(f"[{rank}] Loading base model: {base_model}")
         model = AutoModelForCausalLM.from_pretrained(
             base_model,
-            torch_dtype=torch.bfloat16,
-            device_map={"": rank},
+            **model_config
         )
         tokenizer = AutoTokenizer.from_pretrained(base_model)
         
@@ -115,8 +134,8 @@ def main():
         )
         model = get_peft_model(model, lora_config)
     
-    # Wrap model in DDP
-    model = DDP(model, device_ids=[rank])
+    # Wrap model in DDP after quantization
+    model = DDP(model, device_ids=[rank], find_unused_parameters=False)
     
     # Load and prepare dataset
     from datasets import load_dataset
@@ -141,13 +160,18 @@ def main():
         gradient_accumulation_steps=hyperparams["training"]["base_gradient_accumulation_steps"],
         learning_rate=hyperparams["training"]["learning_rate"],
         max_steps=hyperparams["training"]["max_steps"],
-        bf16=True,
+        bf16=True,  # Use bfloat16 for training
         logging_steps=1,
         save_strategy="steps",
         save_steps=hyperparams["training"]["max_steps"],
         ddp_find_unused_parameters=False,
         report_to="wandb" if is_main_process else None,
         local_rank=args.local_rank,
+        # Add gradient checkpointing for memory efficiency
+        gradient_checkpointing=True,
+        # Add proper fp16 settings
+        fp16=False,  # Disable fp16 since we're using bf16
+        tf32=True,  # Enable tensor float 32 for better performance on Ampere GPUs
     )
     
     trainer = Trainer(
@@ -155,13 +179,14 @@ def main():
         args=training_args,
         train_dataset=converted_dataset,
         data_collator=DefaultDataCollator(),
+        train_sampler=train_sampler,  # Add distributed sampler
     )
     
     trainer.train()
     
     if is_main_process:
         # Save model locally
-        model.save_pretrained(local_checkpoint)
+        model.save_pretrained(local_checkpoint, safe_serialization=True)
         tokenizer.save_pretrained(local_checkpoint)
         
         # Upload to HuggingFace Hub
