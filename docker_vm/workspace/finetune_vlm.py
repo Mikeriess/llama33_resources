@@ -1,7 +1,6 @@
 import argparse
 from datetime import datetime
 import wandb
-from unsloth import is_bf16_supported
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Finetune Vision Language Model')
@@ -26,7 +25,7 @@ def convert_to_conversation(sample):
     return { "messages" : conversation }
 
 def main():
-    from unsloth import FastVisionModel
+    from unsloth import FastVisionModel, is_bf16_supported
     import torch
     args = parse_args()
 
