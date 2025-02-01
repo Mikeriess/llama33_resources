@@ -36,6 +36,7 @@ def main():
     wandb.init(
         project="hack_oslo",
         name=current_time,
+        anonymous="allow",  # Makes runs publicly visible
         config={
             # Dataset config
             "dataset": args.data,

@@ -16,7 +16,8 @@ python finetune_vlm.py
 python finetune_vlm.py --data "your/dataset/name"
 
 Notes:
-- All runs are logged to the "hack_oslo" project in Weights & Biases
+- All runs are logged to the public "hack_oslo" project in Weights & Biases
+- Results can be viewed at: wandb.ai/metahack/hack_oslo
 - Each run is named with the current date/time in Danish format: DD-MM-YYYY_HH-MM-SS
 - The model uses 4-bit quantization to reduce memory usage
 - Training progress and metrics can be monitored in real-time on W&B dashboard
