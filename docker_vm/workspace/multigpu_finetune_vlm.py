@@ -3,7 +3,6 @@ from datetime import datetime
 import wandb
 import os
 import torch
-import json
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Multi-GPU Finetune Vision Language Model')
@@ -12,10 +11,6 @@ def parse_args():
     parser.add_argument('--instruction', type=str, 
                       default="You are an expert radiographer. Describe accurately what you see in this image.",
                       help='Instruction prompt for the model')
-    parser.add_argument('--model_path', type=str, default=None,
-                      help='Path to load model from (default: None, uses base model)')
-    parser.add_argument('--output_dir', type=str, default="outputs",
-                      help='Directory to save model to (default: outputs)')
     return parser.parse_args()
 
 def convert_to_conversation(sample, instruction):
@@ -41,6 +36,11 @@ def main():
     current_time = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
     from unsloth import FastVisionModel, is_bf16_supported
     
+    # Check for local checkpoint
+    local_checkpoint = "llama32_checkpoint"
+    model_id = local_checkpoint if os.path.exists(local_checkpoint) else "unsloth/Llama-3.2-11B-Vision-Instruct"
+    print(f"Loading model from: {model_id}")
+    
     wandb.init(
         project="hack_oslo",
         name=current_time,
@@ -49,6 +49,7 @@ def main():
             # Dataset config
             "dataset": args.data,
             "instruction": args.instruction,
+            "model_source": model_id,
             
             # Model config
             "model_name": "unsloth/Llama-3.2-11B-Vision-Instruct",
@@ -89,9 +90,8 @@ def main():
     from transformers.trainer_utils import get_last_checkpoint
 
     # Load model with auto device mapping
-    model_path = args.model_path if args.model_path else wandb.config.model_name
     model, tokenizer = FastVisionModel.from_pretrained(
-        model_path,
+        model_id,
         load_in_4bit=wandb.config.load_in_4bit,
         use_gradient_checkpointing=wandb.config.use_gradient_checkpointing,
         device_map="auto",
@@ -130,7 +130,7 @@ def main():
         weight_decay=wandb.config.weight_decay,
         lr_scheduler_type=wandb.config.lr_scheduler,
         seed=wandb.config.random_state,
-        output_dir=args.output_dir,
+        output_dir="outputs",
         report_to="wandb",
         save_strategy="steps",
         save_steps=wandb.config.max_steps,
@@ -159,35 +159,19 @@ def main():
 
     trainer_stats = trainer.train()
     
-    # Save the model and tokenizer
-    print(f"\nSaving model to {args.output_dir}")
-    if not os.path.exists(args.output_dir):
-        os.makedirs(args.output_dir)
-        
-    # Save PEFT adapter config and model
-    model.save_pretrained(args.output_dir)
-    # Save tokenizer
-    tokenizer.save_pretrained(args.output_dir)
-    # Save training args
-    training_args.save_pretrained(args.output_dir)
+    # Save model locally
+    print("Saving model locally...")
+    model.save_pretrained(local_checkpoint)
+    tokenizer.save_pretrained(local_checkpoint)
     
-    # Save additional config info
-    config_dict = {
-        "base_model_name": wandb.config.model_name,
-        "instruction": wandb.config.instruction,
-        "dataset": wandb.config.dataset,
-        "training_params": {
-            "batch_size": wandb.config.batch_size,
-            "learning_rate": wandb.config.learning_rate,
-            "num_gpus": wandb.config.num_gpus,
-            "max_steps": wandb.config.max_steps
-        }
-    }
-    
-    with open(os.path.join(args.output_dir, "training_config.json"), "w") as f:
-        json.dump(config_dict, f, indent=2)
-    
-    print(f"Model, tokenizer, and configs saved to {args.output_dir}")
+    # Upload to HuggingFace Hub
+    if "HF_TOKEN" in os.environ:
+        print("Uploading model to HuggingFace Hub...")
+        repo_id = f"llama32_{args.experiment_number}_{args.data.replace('/', '_')}"
+        model.push_to_hub(repo_id, use_auth_token=os.environ["HF_TOKEN"])
+        tokenizer.push_to_hub(repo_id, use_auth_token=os.environ["HF_TOKEN"])
+    else:
+        print("Warning: HF_TOKEN not found in environment, skipping upload")
     
     wandb.finish()
 
