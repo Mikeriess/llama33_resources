@@ -4,7 +4,7 @@
         "Analyze this medical image and describe any abnormalities you observe.",
         "What are the key findings in this radiographic image?"
     ],
-    "dataset2": [
+    "lmms-lab/multimodal-open-r1-8k-verified": [
         "Describe the medical condition shown in this image.",
         "What diagnostic insights can you provide from this image?"
     ]
