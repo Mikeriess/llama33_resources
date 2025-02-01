@@ -64,36 +64,65 @@ def get_model_config():
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=True,
         bnb_4bit_quant_type="nf4",
-        bnb_4bit_compute_dtype=torch.bfloat16,  # Changed to bfloat16
+        bnb_4bit_compute_dtype=torch.float16,  # Changed back to float16 for better compatibility
         bnb_4bit_use_double_quant=True
     )
-    
     return bnb_config
 
 def load_model(model_path, bnb_config, is_base_model=False, hyperparams=None):
     """Load model with proper quantization sequence"""
-    # 1. First load base model
+    print(f"Loading model from: {model_path}")
+    
+    # 1. First load base model without quantization
     model = AutoModelForCausalLM.from_pretrained(
         model_path,
         device_map="auto",
-        torch_dtype=torch.bfloat16  # Changed to bfloat16
+        torch_dtype=torch.float16
     )
     
-    # 2. Apply quantization
-    model = model.quantize(bnb_config)
+    # 2. If this is a checkpoint, save it unquantized first
+    if not is_base_model:
+        unquantized_path = f"{model_path}_unquantized"
+        print(f"Saving unquantized checkpoint to: {unquantized_path}")
+        model.save_pretrained(unquantized_path, safe_serialization=True)
+        model_path = unquantized_path
     
-    # 3. Apply LoRA only if this is the base model
+    # 3. Load with quantization
+    model = AutoModelForCausalLM.from_pretrained(
+        model_path,
+        quantization_config=bnb_config,
+        device_map="auto"
+    )
+    
+    # 4. Apply LoRA if this is the base model
     if is_base_model and hyperparams:
+        print("Applying LoRA configuration")
         lora_config = LoraConfig(
             r=hyperparams["lora"]["r"],
             lora_alpha=hyperparams["lora"]["alpha"],
             target_modules=["q_proj", "v_proj", "k_proj", "o_proj"],
             lora_dropout=hyperparams["lora"]["dropout"],
             bias=hyperparams["lora"]["bias"],
+            task_type="CAUSAL_LM"  # Added task type
         )
         model = get_peft_model(model, lora_config)
     
     return model
+
+def save_model(model, tokenizer, path, is_main_process):
+    """Save model properly handling quantization"""
+    if is_main_process:
+        print(f"Saving model to: {path}")
+        # 1. Get the base model without quantization
+        base_model = model.module if hasattr(model, "module") else model
+        if hasattr(base_model, "get_base_model"):
+            base_model = base_model.get_base_model()
+        
+        # 2. Save unquantized version
+        base_model.save_pretrained(f"{path}_unquantized", safe_serialization=True)
+        tokenizer.save_pretrained(f"{path}_unquantized")
+        
+        print("Model saved successfully")
 
 def main():
     args = parse_args()
@@ -184,13 +213,19 @@ def main():
     trainer.train()
     
     if is_main_process:
-        # Save model locally
-        model.save_pretrained(local_checkpoint, safe_serialization=True)
-        tokenizer.save_pretrained(local_checkpoint)
+        # Save model locally (unquantized version)
+        save_model(model, tokenizer, local_checkpoint, is_main_process)
         
-        # Upload to HuggingFace Hub
+        # Upload to HuggingFace Hub (unquantized version)
         repo_id = f"MykMaks/llama-3.2-11B-V-I_{args.experiment_number}_{args.data.replace('/', '_')}"
-        model.push_to_hub(repo_id, safe_serialization=True)
+        print(f"Uploading to HuggingFace Hub: {repo_id}")
+        
+        # Get base model for upload
+        base_model = model.module if hasattr(model, "module") else model
+        if hasattr(base_model, "get_base_model"):
+            base_model = base_model.get_base_model()
+        
+        base_model.push_to_hub(repo_id, safe_serialization=True)
         tokenizer.push_to_hub(repo_id)
         
         wandb.finish()
