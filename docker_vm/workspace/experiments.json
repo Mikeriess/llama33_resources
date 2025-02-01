@@ -6,7 +6,7 @@
         ]
     },
     "MykMaks/NorwegianDataset-compressed": {
-        "text_field": "caption",
+        "text_field": "solution",
         "prompts": [
             "Vennligst beskriv hva du ser i dette bildet."
         ]
