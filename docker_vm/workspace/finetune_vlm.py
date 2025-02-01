@@ -1,9 +1,13 @@
 import argparse
+from datetime import datetime
+import wandb
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Finetune Vision Language Model')
     parser.add_argument('--data', type=str, default="unsloth/Radiology_mini",
                       help='Dataset name to use for finetuning (default: unsloth/Radiology_mini)')
+    parser.add_argument('--project', type=str, default=None,
+                      help='Project name for Weights & Biases (default: metahack_<datetime>)')
     return parser.parse_args()
 
 instruction = "You are an expert radiographer. Describe accurately what you see in this image."
@@ -26,6 +30,28 @@ def main():
     from unsloth import FastVisionModel
     import torch
     args = parse_args()
+
+    # Setup W&B project name
+    if args.project is None:
+        current_time = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+        project_name = f"metahack_{current_time}"
+    else:
+        project_name = f"metahack_{args.project}"
+
+    # Initialize W&B
+    wandb.init(
+        project=project_name,
+        config={
+            "dataset": args.data,
+            "model": "unsloth/Llama-3.2-11B-Vision-Instruct",
+            "load_in_4bit": True,
+            "batch_size": 2,
+            "gradient_accumulation_steps": 4,
+            "learning_rate": 2e-4,
+            "warmup_steps": 5,
+            "max_steps": 30,
+        }
+    )
 
     model, tokenizer = FastVisionModel.from_pretrained(
         "unsloth/Llama-3.2-11B-Vision-Instruct",
@@ -102,7 +128,7 @@ def main():
             lr_scheduler_type = "linear",
             seed = 3407,
             output_dir = "outputs",
-            report_to = "none",
+            report_to = "wandb",  # Changed from "none" to "wandb"
 
             remove_unused_columns = False,
             dataset_text_field = "",
@@ -120,6 +146,9 @@ def main():
     print(f"{start_gpu_memory} GB of memory reserved.")
 
     trainer_stats = trainer.train()
+    
+    # Close wandb run
+    wandb.finish()
 
 if __name__ == "__main__":
     main()

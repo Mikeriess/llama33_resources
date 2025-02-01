@@ -1,0 +1,47 @@
+Vision Language Model Finetuning Script Instructions
+
+This script allows you to finetune a vision-language model on custom datasets with Weights & Biases logging.
+
+Basic Usage:
+python finetune_vlm.py
+
+Optional Arguments:
+--data: Specify a custom dataset (default: unsloth/Radiology_mini)
+--project: Specify a custom project name for W&B logging (will be prefixed with "metahack_")
+
+Examples:
+1. Run with default settings:
+python finetune_vlm.py
+
+2. Use a custom dataset:
+python finetune_vlm.py --data "your/dataset/name"
+
+3. Use a custom dataset and project name:
+python finetune_vlm.py --data "your/dataset/name" --project "experiment1"
+
+Notes:
+- If no project name is provided, it will use "metahack_" followed by the current date/time
+- The date format used is Danish style: DD-MM-YYYY_HH-MM-SS
+- All runs are automatically logged to Weights & Biases
+- The model uses 4-bit quantization to reduce memory usage
+- Training progress and metrics can be monitored in real-time on W&B dashboard
+
+Requirements:
+- torch
+- transformers
+- unsloth
+- wandb
+- datasets
+- trl
+
+The script will:
+1. Load the specified dataset
+2. Initialize the model in 4-bit precision
+3. Run a test inference on the first image
+4. Train the model using LoRA
+5. Log all metrics to Weights & Biases
+6. Save the model to the "outputs" directory
+
+Memory Requirements:
+- The script will display GPU memory usage statistics
+- 4-bit quantization is used to minimize memory footprint 
