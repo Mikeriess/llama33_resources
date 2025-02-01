@@ -91,7 +91,7 @@ def main():
     from trl import SFTTrainer, SFTConfig
     from transformers.trainer_utils import get_last_checkpoint
 
-    # Load model with auto device mapping
+    # Load base model (either local checkpoint or original model)
     model, tokenizer = FastVisionModel.from_pretrained(
         model_id,
         load_in_4bit=wandb.config.load_in_4bit,
@@ -161,19 +161,24 @@ def main():
 
     trainer_stats = trainer.train()
     
-    # Save model locally
+    # Save model locally - merge adapter weights and save full model
     print("Saving model locally...")
-    model.save_pretrained(local_checkpoint)
+    merged_model = model.merge_and_unload()  # This merges the LoRA weights into the base model
+    merged_model.save_pretrained(local_checkpoint)
     tokenizer.save_pretrained(local_checkpoint)
     
-    # Upload to HuggingFace Hub
+    # Upload to HuggingFace Hub - also upload the merged model
     if "HF_TOKEN" in os.environ:
         print("Uploading model to HuggingFace Hub...")
         repo_id = f"llama32_{args.experiment_number}_{args.data.replace('/', '_')}"
-        model.push_to_hub(repo_id, use_auth_token=os.environ["HF_TOKEN"])
+        merged_model.push_to_hub(repo_id, use_auth_token=os.environ["HF_TOKEN"])
         tokenizer.push_to_hub(repo_id, use_auth_token=os.environ["HF_TOKEN"])
     else:
         print("Warning: HF_TOKEN not found in environment, skipping upload")
+    
+    # Clean up to free memory
+    del merged_model
+    torch.cuda.empty_cache()
     
     wandb.finish()
 
