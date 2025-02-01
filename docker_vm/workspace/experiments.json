@@ -5,16 +5,22 @@
             "Beskriv venligst dette billede."
         ]
     },
-    "MykMaks/nordjylland-news-image-captioning": {
-        "text_field": "solution",
+    "MykMaks/NorwegianDataset-compressed": {
+        "text_field": "caption",
         "prompts": [
-            "Hvad sker der i dette billede?"
+            "Vennligst beskriv hva du ser i dette bildet."
         ]
     },
     "MykMaks/da-wit": {
         "text_field": "solution",
         "prompts": [
             "Beskriv hvad du ser i dette billede."
+        ]
+    },
+    "MykMaks/nordjylland-news-image-captioning": {
+        "text_field": "solution",
+        "prompts": [
+            "Hvad sker der i dette billede?"
         ]
     },
     "MykMaks/norhand_v3": {
