@@ -1,22 +1,8 @@
 {
-    "unsloth/Radiology_mini": {
-        "text_field": "caption",
-        "prompts": [
-            "You are an expert radiographer. Describe accurately what you see in this image.",
-            "Analyze this medical image and describe any abnormalities you observe.",
-            "What are the key findings in this radiographic image?"
-        ]
-    },
     "MykMaks/fmsudgivelser": {
         "text_field": "solution",
         "prompts": [
             "Beskriv venligst dette billede."
-        ]
-    },
-    "MykMaks/norhand_v3": {
-        "text_field": "solution",
-        "prompts": [
-            "Vennligst beskriv hva du ser i dette bildet."
         ]
     },
     "MykMaks/nordjylland-news-image-captioning": {
@@ -29,6 +15,12 @@
         "text_field": "solution",
         "prompts": [
             "Beskriv hvad du ser i dette billede."
+        ]
+    },
+    "MykMaks/norhand_v3": {
+        "text_field": "solution43784356347856348756348576348573465873465873465837456384753",
+        "prompts": [
+            "Vennligst beskriv hva du ser i dette bildet."
         ]
     }
 }
