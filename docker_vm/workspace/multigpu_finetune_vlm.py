@@ -54,6 +54,7 @@ def main():
     # Only initialize wandb on the main process
     if local_rank <= 0:
         current_time = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+        from unsloth import is_bf16_supported
         wandb.init(
             project="hack_oslo",
             name=current_time,
