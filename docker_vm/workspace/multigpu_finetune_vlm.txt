@@ -1,27 +1,28 @@
 Multi-GPU Vision Language Model Finetuning Script Instructions
 
-This script enables distributed training of the vision-language model across all available GPUs.
+This script enables distributed training of the vision-language model across all available GPUs using unsloth's built-in multi-GPU support.
 
 Basic Usage:
-torchrun --nproc_per_node=NUM_GPUS multigpu_finetune_vlm.py
+python multigpu_finetune_vlm.py
 
 Optional Arguments:
 --data: Specify a custom dataset (default: unsloth/Radiology_mini)
 
 Examples:
-1. Run with default settings on all available GPUs:
-torchrun --nproc_per_node=auto multigpu_finetune_vlm.py
+1. Run with default settings (automatically uses all available GPUs):
+python multigpu_finetune_vlm.py
 
-2. Run with custom dataset on 4 GPUs:
-torchrun --nproc_per_node=4 multigpu_finetune_vlm.py --data "your/dataset/name"
+2. Run with custom dataset:
+python multigpu_finetune_vlm.py --data "your/dataset/name"
 
 Notes:
-- Uses PyTorch Distributed Data Parallel (DDP) for multi-GPU training
+- Automatically detects and uses all available GPUs
+- Uses unsloth's device_map="auto" for optimal GPU memory distribution
+- Automatically scales batch size and gradient accumulation with number of GPUs
 - All runs are logged to the public "hack_oslo" project in Weights & Biases
 - Each run is named with the current date/time in Danish format: DD-MM-YYYY_HH-MM-SS
 - The model uses 4-bit quantization to reduce memory usage
 - Training progress and metrics can be monitored in real-time on W&B dashboard
-- Only the main process (rank 0) logs to W&B
 
 Requirements:
 - torch with CUDA support
@@ -30,8 +31,8 @@ Requirements:
 - wandb
 - datasets
 - trl
-- Multiple CUDA-capable GPUs
+- One or more CUDA-capable GPUs
 
 Memory Requirements:
-- Uses 4-bit quantization to minimize memory footprint per GPU
-- Memory is distributed across available GPUs 
+- Uses 4-bit quantization to minimize memory footprint
+- Memory is automatically distributed across available GPUs using unsloth's device mapping 
