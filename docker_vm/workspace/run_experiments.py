@@ -25,9 +25,11 @@ def load_experiments(config_path):
     if not isinstance(experiments, dict):
         raise ValueError("Experiments config must be a dictionary with datasets as keys")
     
-    for dataset, instructions in experiments.items():
-        if not isinstance(instructions, list):
-            raise ValueError(f"Instructions for dataset {dataset} must be a list")
+    for dataset, config in experiments.items():
+        if not isinstance(config, dict) or "prompts" not in config:
+            raise ValueError(f"Dataset {dataset} must have a 'prompts' key")
+        if not isinstance(config["prompts"], list):
+            raise ValueError(f"Prompts for dataset {dataset} must be a list")
     
     return experiments
 
@@ -38,7 +40,7 @@ def main():
     experiments = load_experiments(args.config)
     
     # Calculate total number of experiments
-    total_experiments = sum(len(instructions) for instructions in experiments.values()) * args.runs_per_config
+    total_experiments = sum(len(config["prompts"]) for config in experiments.values()) * args.runs_per_config
     
     print(f"Starting experiments at {datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}")
     print(f"Loaded {len(experiments)} datasets with a total of {total_experiments} experiments to run")
@@ -46,14 +48,16 @@ def main():
     # Track progress
     current_experiment = args.start_number - 1
     
-    for dataset, instructions in experiments.items():
+    for dataset, config in experiments.items():
         print(f"\nProcessing dataset: {dataset}")
+        text_field = config["text_field"]
         
-        for instruction in instructions:
+        for instruction in config["prompts"]:
             for run in range(args.runs_per_config):
                 current_experiment += 1
                 print(f"\nExperiment {current_experiment}/{total_experiments + args.start_number - 1}")
                 print(f"Dataset: {dataset}")
+                print(f"Text field: {text_field}")
                 print(f"Instruction: {instruction[:100]}...")
                 print(f"Run: {run + 1}/{args.runs_per_config}")
                 
@@ -62,6 +66,7 @@ def main():
                     "python", "multigpu_finetune_vlm.py",
                     "--data", dataset,
                     "--instruction", instruction,
+                    "--text_field", text_field,
                     "--experiment_number", str(current_experiment)
                 ]
                 

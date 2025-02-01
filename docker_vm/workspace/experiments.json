@@ -1,11 +1,17 @@
 {
-    "unsloth/Radiology_mini": [
-        "You are an expert radiographer. Describe accurately what you see in this image.",
-        "Analyze this medical image and describe any abnormalities you observe.",
-        "What are the key findings in this radiographic image?"
-    ],
-    "lmms-lab/multimodal-open-r1-8k-verified": [
-        "Describe the medical condition shown in this image.",
-        "What diagnostic insights can you provide from this image?"
-    ]
+    "unsloth/Radiology_mini": {
+        "text_field": "caption",
+        "prompts": [
+            "You are an expert radiographer. Describe accurately what you see in this image.",
+            "Analyze this medical image and describe any abnormalities you observe.",
+            "What are the key findings in this radiographic image?"
+        ]
+    },
+    "lmms-lab/multimodal-open-r1-8k-verified": {
+        "text_field": "text",
+        "prompts": [
+            "Describe the medical condition shown in this image.",
+            "What diagnostic insights can you provide from this image?"
+        ]
+    }
 } 

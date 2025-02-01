@@ -6,16 +6,17 @@ import torch
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Multi-GPU Finetune Vision Language Model')
-    parser.add_argument('--data', type=str, default="unsloth/Radiology_mini",
-                      help='Dataset name to use for finetuning (default: unsloth/Radiology_mini)')
-    parser.add_argument('--instruction', type=str, 
-                      default="You are an expert radiographer. Describe accurately what you see in this image.",
+    parser.add_argument('--data', type=str, required=True,
+                      help='Dataset name to use for finetuning')
+    parser.add_argument('--instruction', type=str, required=True,
                       help='Instruction prompt for the model')
+    parser.add_argument('--text_field', type=str, required=True,
+                      help='Field name containing the text in the dataset')
     parser.add_argument('--experiment_number', type=int, required=True,
                       help='Experiment number for model naming')
     return parser.parse_args()
 
-def convert_to_conversation(sample, instruction):
+def convert_to_conversation(sample, instruction, text_field):
     conversation = [
         { "role": "user",
           "content" : [
@@ -24,7 +25,7 @@ def convert_to_conversation(sample, instruction):
         },
         { "role" : "assistant",
           "content" : [
-            {"type" : "text",  "text"  : sample["caption"]} ]
+            {"type" : "text",  "text"  : sample[text_field]} ]
         },
     ]
     return { "messages" : conversation }
@@ -131,7 +132,7 @@ def main():
     from transformers.trainer_utils import get_last_checkpoint
 
     dataset = load_dataset(wandb.config.dataset, split="train")
-    converted_dataset = [convert_to_conversation(sample, wandb.config.instruction) for sample in dataset]
+    converted_dataset = [convert_to_conversation(sample, wandb.config.instruction, args.text_field) for sample in dataset]
 
     FastVisionModel.for_training(model)
 
@@ -167,13 +168,6 @@ def main():
         train_dataset=converted_dataset,
         args=training_args,
     )
-
-    # Print GPU stats
-    # for i in range(num_gpus):
-    #     gpu_stats = torch.cuda.get_device_properties(i)
-    #     max_memory = round(gpu_stats.total_memory / 1024 / 1024 / 1024, 3)
-    #     print(f"GPU {i} = {gpu_stats.name}. Max memory = {max_memory} GB.")
-    # print(f"Training on {num_gpus} GPUs")
 
     trainer_stats = trainer.train()
     
