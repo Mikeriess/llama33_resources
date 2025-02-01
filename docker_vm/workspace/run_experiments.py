@@ -12,8 +12,8 @@ def parse_args():
                       help='Path to experiments configuration file (default: experiments.json)')
     parser.add_argument('--runs_per_config', type=int, default=1,
                       help='Number of runs for each dataset-instruction combination (default: 1)')
-    parser.add_argument('--hf_token', type=str, required=True,
-                      help='HuggingFace token for model upload')
+    # parser.add_argument('--hf_token', type=str, required=True, # expected to be set in the environment
+    #                   help='HuggingFace token for model upload')
     return parser.parse_args()
 
 def load_experiments(config_path):
