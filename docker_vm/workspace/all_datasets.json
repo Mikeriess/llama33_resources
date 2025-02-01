@@ -1,0 +1,37 @@
+{
+    "MykMaks/fmsudgivelser": {
+        "text_field": "solution",
+        "status": "works",
+        "prompts": [
+            "Beskriv venligst dette billede."
+        ]
+    },
+    "MykMaks/NorwegianDataset-compressed": {
+        "text_field": "solution",
+        "status": "works",
+        "prompts": [
+            "Vennligst beskriv hva du ser i dette bildet."
+        ]
+    },
+    "MykMaks/da-wit": {
+        "text_field": "solution",
+        "status": "does not work",
+        "prompts": [
+            "Beskriv hvad du ser i dette billede."
+        ]
+    },
+    "MykMaks/nordjylland-news-image-captioning": {
+        "text_field": "solution",
+        "status": "does not work",
+        "prompts": [
+            "Hvad sker der i dette billede?"
+        ]
+    },
+    "MykMaks/norhand_v3": {
+        "text_field": "solution43784356347856348756348576348573465873465873465837456384753",    
+        "status": "does not work",
+        "prompts": [
+            "Vennligst beskriv hva du ser i dette bildet."
+        ]
+    }
+}
