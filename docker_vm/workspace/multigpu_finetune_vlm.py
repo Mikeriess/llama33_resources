@@ -45,7 +45,7 @@ def main():
     # Initialize model
     if os.path.exists(local_checkpoint):
         print(f"Loading from local checkpoint: {local_checkpoint}")
-        # Load the model with LoRA weights for continued finetuning
+        # Load the model with existing LoRA weights for continued finetuning
         model, tokenizer = FastVisionModel.from_pretrained(
             local_checkpoint,  # Load from local LoRA checkpoint
             load_in_4bit=True,
@@ -55,12 +55,27 @@ def main():
         model_source = local_checkpoint
     else:
         print(f"Loading base model: {base_model}")
-        # Load the base model for first training
+        # Load the base model and add LoRA adapters for first training
         model, tokenizer = FastVisionModel.from_pretrained(
             base_model,
             load_in_4bit=True,
             use_gradient_checkpointing="unsloth",
             device_map="auto",
+        )
+        # Only add LoRA adapters when starting from base model
+        model = FastVisionModel.get_peft_model(
+            model,
+            finetune_vision_layers=False,
+            finetune_language_layers=True,
+            finetune_attention_modules=True,
+            finetune_mlp_modules=True,
+            r=16,
+            lora_alpha=16,
+            lora_dropout=0.05,
+            bias="none",
+            random_state=1337,
+            use_rslora=False,
+            loftq_config=None,
         )
         model_source = base_model
 
@@ -114,21 +129,6 @@ def main():
     from unsloth.trainer import UnslothVisionDataCollator
     from trl import SFTTrainer, SFTConfig
     from transformers.trainer_utils import get_last_checkpoint
-
-    model = FastVisionModel.get_peft_model(
-        model,
-        finetune_vision_layers=wandb.config.finetune_vision_layers,
-        finetune_language_layers=wandb.config.finetune_language_layers,
-        finetune_attention_modules=wandb.config.finetune_attention_modules,
-        finetune_mlp_modules=wandb.config.finetune_mlp_modules,
-        r=wandb.config.lora_r,
-        lora_alpha=wandb.config.lora_alpha,
-        lora_dropout=wandb.config.lora_dropout,
-        bias=wandb.config.lora_bias,
-        random_state=wandb.config.random_state,
-        use_rslora=wandb.config.use_rslora,
-        loftq_config=None,
-    )
 
     dataset = load_dataset(wandb.config.dataset, split="train")
     converted_dataset = [convert_to_conversation(sample, wandb.config.instruction) for sample in dataset]
