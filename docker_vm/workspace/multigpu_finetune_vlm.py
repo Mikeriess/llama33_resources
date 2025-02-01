@@ -11,6 +11,10 @@ def parse_args():
     parser.add_argument('--instruction', type=str, 
                       default="You are an expert radiographer. Describe accurately what you see in this image.",
                       help='Instruction prompt for the model')
+    parser.add_argument('--model_path', type=str, default=None,
+                      help='Path to load model from (default: None, uses base model)')
+    parser.add_argument('--output_dir', type=str, default="outputs",
+                      help='Directory to save model to (default: outputs)')
     return parser.parse_args()
 
 def convert_to_conversation(sample, instruction):
@@ -84,11 +88,12 @@ def main():
     from transformers.trainer_utils import get_last_checkpoint
 
     # Load model with auto device mapping
+    model_path = args.model_path if args.model_path else wandb.config.model_name
     model, tokenizer = FastVisionModel.from_pretrained(
-        wandb.config.model_name,
+        model_path,
         load_in_4bit=wandb.config.load_in_4bit,
         use_gradient_checkpointing=wandb.config.use_gradient_checkpointing,
-        device_map="auto",  # This enables automatic multi-GPU distribution
+        device_map="auto",
     )
 
     model = FastVisionModel.get_peft_model(
@@ -124,7 +129,7 @@ def main():
         weight_decay=wandb.config.weight_decay,
         lr_scheduler_type=wandb.config.lr_scheduler,
         seed=wandb.config.random_state,
-        output_dir="outputs",
+        output_dir=args.output_dir,
         report_to="wandb",
         save_strategy="steps",
         save_steps=wandb.config.max_steps,
