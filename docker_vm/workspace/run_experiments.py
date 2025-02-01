@@ -61,9 +61,12 @@ def main():
                 print(f"Instruction: {instruction[:100]}...")
                 print(f"Run: {run + 1}/{args.runs_per_config}")
                 
-                # Construct command
+                # Construct torchrun command for distributed training
                 cmd = [
-                    "python", "training_pass_vlm.py",
+                    "torchrun",
+                    "--nproc_per_node=8",  # Use all 8 GPUs
+                    "--master_port=29500",  # Avoid port conflicts
+                    "training_pass_vlm.py",
                     "--data", dataset,
                     "--instruction", instruction,
                     "--text_field", text_field,

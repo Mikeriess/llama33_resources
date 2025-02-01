@@ -4,6 +4,9 @@ import wandb
 import os
 import torch
 import json
+from torch.utils.data import DistributedSampler
+from torch.nn.parallel import DistributedDataParallel as DDP
+import torch.distributed as dist
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Multi-GPU Finetune Vision Language Model')
@@ -17,6 +20,9 @@ def parse_args():
                       help='Experiment number for model naming')
     parser.add_argument('--hyperparams', type=str, default="hyperparams.json",
                       help='Path to hyperparameters configuration file')
+    # Add distributed training arguments
+    parser.add_argument('--local_rank', type=int, default=-1,
+                      help='Local rank for distributed training')
     return parser.parse_args()
 
 def load_hyperparams(config_path):
@@ -40,151 +46,133 @@ def convert_to_conversation(sample, instruction, text_field):
     ]
     return { "messages" : conversation }
 
+def setup_distributed():
+    # Initialize the distributed environment
+    if "WORLD_SIZE" in os.environ:
+        world_size = int(os.environ["WORLD_SIZE"])
+    else:
+        world_size = torch.cuda.device_count()
+    
+    dist.init_process_group(backend="nccl")
+    torch.cuda.set_device(dist.get_rank())
+    return dist.get_rank(), world_size
+
 def main():
     args = parse_args()
     
-    # Get number of available GPUs
-    num_gpus = torch.cuda.device_count()
+    # Setup distributed training
+    rank, world_size = setup_distributed()
+    is_main_process = rank == 0
     
     # Load hyperparameters
     hyperparams = load_hyperparams(args.hyperparams)
     
-    current_time = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
-    from unsloth import FastVisionModel, is_bf16_supported
+    if is_main_process:
+        current_time = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+        wandb.init(
+            project="hack_oslo",
+            name=current_time,
+            config={
+                "dataset": args.data,
+                "instruction": args.instruction,
+                **hyperparams,
+                "world_size": world_size
+            }
+        )
     
-    # Check for local checkpoint
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+    
+    # Initialize model
     local_checkpoint = "llama32_checkpoint"
     base_model = hyperparams["model"]["base_model"]
     
-    # Initialize model
     if os.path.exists(local_checkpoint):
-        print(f"Loading from local checkpoint: {local_checkpoint}")
-        model, tokenizer = FastVisionModel.from_pretrained(
+        print(f"[{rank}] Loading from checkpoint: {local_checkpoint}")
+        model = AutoModelForCausalLM.from_pretrained(
             local_checkpoint,
-            load_in_4bit=hyperparams["model"]["load_in_4bit"],
-            use_gradient_checkpointing=hyperparams["model"]["use_gradient_checkpointing"],
-            device_map="auto",
+            torch_dtype=torch.bfloat16,
+            device_map={"": rank},
         )
-        model_source = local_checkpoint
+        tokenizer = AutoTokenizer.from_pretrained(local_checkpoint)
     else:
-        print(f"Loading base model: {base_model}")
-        model, tokenizer = FastVisionModel.from_pretrained(
+        print(f"[{rank}] Loading base model: {base_model}")
+        model = AutoModelForCausalLM.from_pretrained(
             base_model,
-            load_in_4bit=hyperparams["model"]["load_in_4bit"],
-            use_gradient_checkpointing=hyperparams["model"]["use_gradient_checkpointing"],
-            device_map="auto",
+            torch_dtype=torch.bfloat16,
+            device_map={"": rank},
         )
-        # Only add LoRA adapters when starting from base model
-        model = FastVisionModel.get_peft_model(
-            model,
-            finetune_vision_layers=hyperparams["lora"]["finetune_vision_layers"],
-            finetune_language_layers=hyperparams["lora"]["finetune_language_layers"],
-            finetune_attention_modules=hyperparams["lora"]["finetune_attention_modules"],
-            finetune_mlp_modules=hyperparams["lora"]["finetune_mlp_modules"],
+        tokenizer = AutoTokenizer.from_pretrained(base_model)
+        
+        # Add LoRA config
+        from peft import LoraConfig, get_peft_model
+        
+        lora_config = LoraConfig(
             r=hyperparams["lora"]["r"],
             lora_alpha=hyperparams["lora"]["alpha"],
+            target_modules=["q_proj", "v_proj", "k_proj", "o_proj"],
             lora_dropout=hyperparams["lora"]["dropout"],
             bias=hyperparams["lora"]["bias"],
-            random_state=hyperparams["lora"]["random_state"],
-            use_rslora=hyperparams["lora"]["use_rslora"],
-            loftq_config=None,
         )
-        model_source = base_model
-
-    print(f"Loading model from: {model_source}")
+        model = get_peft_model(model, lora_config)
     
-    # Calculate batch size and gradient accumulation based on number of GPUs
-    batch_size = hyperparams["training"]["base_batch_size"] * num_gpus
-    grad_accum = max(1, hyperparams["training"]["base_gradient_accumulation_steps"] // num_gpus)
+    # Wrap model in DDP
+    model = DDP(model, device_ids=[rank])
     
-    wandb.init(
-        project="hack_oslo",
-        name=current_time,
-        anonymous="allow",
-        config={
-            # Dataset config
-            "dataset": args.data,
-            "instruction": args.instruction,
-            "model_source": model_source,
-            "base_model": base_model,
-            
-            # Model config
-            **hyperparams["model"],
-            
-            # LoRA config
-            **hyperparams["lora"],
-            
-            # Training config
-            **hyperparams["training"],
-            "batch_size": batch_size,
-            "gradient_accumulation_steps": grad_accum,
-            "fp16": not is_bf16_supported(),
-            "bf16": is_bf16_supported(),
-            "num_gpus": num_gpus,
-        }
-    )
-
+    # Load and prepare dataset
     from datasets import load_dataset
-    from unsloth.trainer import UnslothVisionDataCollator
-    from trl import SFTTrainer, SFTConfig
-    from transformers.trainer_utils import get_last_checkpoint
-
-    dataset = load_dataset(wandb.config.dataset, split="train")
-    converted_dataset = [convert_to_conversation(sample, wandb.config.instruction, args.text_field) for sample in dataset]
-
-    FastVisionModel.for_training(model)
-
-    training_args = SFTConfig(
-        per_device_train_batch_size=wandb.config.batch_size // num_gpus,
-        gradient_accumulation_steps=wandb.config.gradient_accumulation_steps,
-        warmup_steps=wandb.config.warmup_steps,
-        max_steps=wandb.config.max_steps,
-        learning_rate=wandb.config.learning_rate,
-        fp16=wandb.config.fp16,
-        bf16=wandb.config.bf16,
-        logging_steps=1,
-        optim="adamw_8bit",
-        weight_decay=wandb.config.weight_decay,
-        lr_scheduler_type=wandb.config.lr_scheduler,
-        seed=wandb.config.random_state,
+    dataset = load_dataset(args.data, split="train")
+    converted_dataset = [convert_to_conversation(sample, args.instruction, args.text_field) 
+                        for sample in dataset]
+    
+    # Create distributed sampler
+    train_sampler = DistributedSampler(
+        converted_dataset,
+        num_replicas=world_size,
+        rank=rank,
+        shuffle=True
+    )
+    
+    # Training configuration
+    from transformers import Trainer, TrainingArguments
+    
+    training_args = TrainingArguments(
         output_dir="outputs",
-        report_to="wandb",
+        per_device_train_batch_size=hyperparams["training"]["base_batch_size"],
+        gradient_accumulation_steps=hyperparams["training"]["base_gradient_accumulation_steps"],
+        learning_rate=hyperparams["training"]["learning_rate"],
+        max_steps=hyperparams["training"]["max_steps"],
+        bf16=True,
+        logging_steps=1,
         save_strategy="steps",
-        save_steps=wandb.config.max_steps,
-        save_total_limit=1,
-        remove_unused_columns=False,
-        dataset_text_field="",
-        dataset_kwargs={"skip_prepare_dataset": True},
-        dataset_num_proc=wandb.config.num_workers,
-        max_seq_length=wandb.config.max_seq_length,
+        save_steps=hyperparams["training"]["max_steps"],
+        ddp_find_unused_parameters=False,
+        report_to="wandb" if is_main_process else None,
+        local_rank=args.local_rank,
     )
-
-    trainer = SFTTrainer(
+    
+    trainer = Trainer(
         model=model,
-        tokenizer=tokenizer,
-        data_collator=UnslothVisionDataCollator(model, tokenizer),
-        train_dataset=converted_dataset,
         args=training_args,
+        train_dataset=converted_dataset,
+        data_collator=DefaultDataCollator(),
     )
-
-    trainer_stats = trainer.train()
     
-    # Save model locally
-    print("Saving model locally...")
-    model.save_pretrained(local_checkpoint, safe_serialization=True)
-    tokenizer.save_pretrained(local_checkpoint)
+    trainer.train()
     
-    # Upload to HuggingFace Hub
-    #if "HF_TOKEN" in os.environ:
-    print("Uploading model to HuggingFace Hub...")
-    repo_id = f"MykMaks/llama-3.2-11B-V-I_{args.experiment_number}_{args.data.replace('/', '_')}"
-    print(f"Repo ID: {repo_id}")
-    model.push_to_hub(repo_id, safe_serialization=True)
-    tokenizer.push_to_hub(repo_id)
-    #else:
-    #    print("Warning: HF_TOKEN not found in environment, skipping upload")
+    if is_main_process:
+        # Save model locally
+        model.save_pretrained(local_checkpoint)
+        tokenizer.save_pretrained(local_checkpoint)
+        
+        # Upload to HuggingFace Hub
+        repo_id = f"MykMaks/llama-3.2-11B-V-I_{args.experiment_number}_{args.data.replace('/', '_')}"
+        model.push_to_hub(repo_id, safe_serialization=True)
+        tokenizer.push_to_hub(repo_id)
+        
+        wandb.finish()
     
-    wandb.finish()
+    # Clean up distributed training
+    dist.destroy_process_group()
 
 if __name__ == "__main__":
     main() 
