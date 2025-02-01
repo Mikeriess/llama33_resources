@@ -1,6 +1,7 @@
 import argparse
 from datetime import datetime
 import wandb
+from unsloth import is_bf16_supported
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Finetune Vision Language Model')
