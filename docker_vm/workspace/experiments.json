@@ -10,7 +10,25 @@
         "text_field": "solution",
         "status": "works",
         "prompts": [
-            "Vennligst beskriv hva du ser i dette bildet."
+            "Vennligst beskriv hva du ser i dette bildet.",
+            "Transkriber dette dokumentet",
+            "Produser markdown text fra dette dokumentet",
+            "Gjør en transkripsjon av bildet",
+            "Hva står det her?",
+            "Gi meg et dokument med teksten i dette bildet",
+            "Skriv ned så nøyaktig du kan hva som står her",
+            "OCR dette bildet",
+            "Utfør OCR og vis dokumentet som markdown",
+            "Kan du lese og vise meg dette dokumentet",
+            "Hva står i bildet",
+            "Gi meg teksten her",
+            "Gjennskap bildet i markdown",
+            "Les nøye igjennom og transkriber dokumentet",
+            "Hei, kan du fortelle meg hva som står her.",
+            "Gjør bildet om til tekst.",
+            "Transkriber",
+            "Gjør om til tekst",
+            "Les dette og gjennskap som markdown"
         ]
     },
     "MykMaks/da-wit": {
@@ -19,5 +37,29 @@
         "prompts": [
             "Beskriv hvad du ser i dette billede."
         ]
+    },
+    "MykMaks/NorwegianDataset-compressed-pt2": {
+        "text_field": "solution",
+          "status": "works",
+          "prompts": [
+              "Transkriber dette dokumentet",
+              "Produser markdown text fra dette dokumentet",
+              "Gjør en transkripsjon av bildet",
+              "Hva står det her?",
+              "Gi meg et dokument med teksten i dette bildet",
+              "Skriv ned så nøyaktig du kan hva som står her",
+              "OCR dette bildet",
+              "Utfør OCR og vis dokumentet som markdown",
+              "Kan du lese og vise meg dette dokumentet",
+              "Hva står i bildet",
+              "Gi meg teksten her",
+              "Gjennskap bildet i markdown",
+              "Les nøye igjennom og transkriber dokumentet",
+              "Hei, kan du fortelle meg hva som står her.",
+              "Gjør bildet om til tekst.",
+              "Transkriber",
+              "Gjør om til tekst",
+              "Les dette og gjennskap som markdown"
+          ]
     }
 }
