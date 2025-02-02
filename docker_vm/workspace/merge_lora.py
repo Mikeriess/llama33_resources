@@ -96,8 +96,8 @@ def main():
     hyperparams = load_hyperparams()
     
     # Specific LoRA model to merge
-    lora_model_id = "MykMaks/llama-3.2-11B-MM-20-MykMaks_da-wit"
-    
+    #lora_model_id = "MykMaks/llama-3.2-11B-MM-20-MykMaks_da-wit"
+    lora_model_id = "MykMaks/llama-3.2-11B-V-I_39_MykMaks_NorwegianDataset-compressed-pt2"
     try:
         print(f"\nProcessing model: {lora_model_id}")
         merged_model_id = merge_and_upload_model(lora_model_id, hyperparams)
