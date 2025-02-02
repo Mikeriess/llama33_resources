@@ -18,9 +18,9 @@ def merge_and_upload_model(lora_model_id, hyperparams):
     # 1. First load base model
     print(f"Loading base model: {hyperparams['model']['base_model']}")
     model, tokenizer = FastVisionModel.from_pretrained(
-        hyperparams["model"]["base_model"],
-        device_map="auto",
-        torch_dtype=torch.float16,  # Use same dtype as training
+                        hyperparams["model"]["base_model"],
+                        device_map="auto",
+                        #torch_dtype=torch.float16,  # Use same dtype as training
     )
     
     # 2. Load adapter model with unsloth
