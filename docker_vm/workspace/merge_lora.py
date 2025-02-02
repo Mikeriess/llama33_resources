@@ -83,9 +83,10 @@ def merge_and_upload_model(lora_model_id, hyperparams):
     tokenizer.push_to_hub(hub_model_id)
 
     # save quantized verisons of the model
-    print(f"Uploading merged model to Hub in quantized versions: {hub_model_id}")
-    merged_model.push_to_hub_gguf(hub_model_id+"-q4_k_m", tokenizer, quantization_method = "q4_k_m")
-    merged_model.push_to_hub_gguf(hub_model_id+"-q8_0", tokenizer, quantization_method = "q8_0")
+    print(f"Uploading merged model to Hub in 4bit: {hub_model_id}")
+    #merged_model.push_to_hub_gguf(hub_model_id+"-q4_k_m", tokenizer, quantization_method = "q4_k_m")
+    #merged_model.push_to_hub_gguf(hub_model_id+"-q8_0", tokenizer, quantization_method = "q8_0")
+    merged_model.save_pretrained_merged(hub_model_id+"-4bit", tokenizer, save_method = "merged_4bit",)
     
     print("Done! Model merged and uploaded successfully.")
     return hub_model_id
