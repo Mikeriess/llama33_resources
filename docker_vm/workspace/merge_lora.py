@@ -19,36 +19,20 @@ def merge_and_upload_model(lora_model_id, hyperparams):
     
     # 1. First load base model - using same initialization as training_pass_vlm.py
     print(f"Loading base model: {hyperparams['model']['base_model']}")
-    model, tokenizer = FastVisionModel.from_pretrained(
+    base_model, tokenizer = FastVisionModel.from_pretrained(
         hyperparams["model"]["base_model"],
         load_in_4bit=hyperparams["model"]["load_in_4bit"],
         use_gradient_checkpointing=hyperparams["model"]["use_gradient_checkpointing"],
         device_map="auto",
     )
     
-    # 2. Load adapter model with same settings
+    # 2. Load adapter model with existing LoRA weights
     print(f"Loading LoRA adapter: {lora_model_id}")
     adapter_model, _ = FastVisionModel.from_pretrained(
-        lora_model_id,
+        lora_model_id,  # This already has LoRA weights
         load_in_4bit=hyperparams["model"]["load_in_4bit"],
         use_gradient_checkpointing=hyperparams["model"]["use_gradient_checkpointing"],
         device_map="auto",
-    )
-    
-    # Add LoRA configuration from hyperparams
-    adapter_model = FastVisionModel.get_peft_model(
-        adapter_model,
-        finetune_vision_layers=hyperparams["lora"]["finetune_vision_layers"],
-        finetune_language_layers=hyperparams["lora"]["finetune_language_layers"],
-        finetune_attention_modules=hyperparams["lora"]["finetune_attention_modules"],
-        finetune_mlp_modules=hyperparams["lora"]["finetune_mlp_modules"],
-        r=hyperparams["lora"]["r"],
-        lora_alpha=hyperparams["lora"]["alpha"],
-        lora_dropout=hyperparams["lora"]["dropout"],
-        bias=hyperparams["lora"]["bias"],
-        random_state=hyperparams["lora"]["random_state"],
-        use_rslora=hyperparams["lora"]["use_rslora"],
-        loftq_config=None,
     )
     
     # 3. Merge adapter with base model
