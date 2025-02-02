@@ -1,11 +1,13 @@
 import os
 from transformers import AutoTokenizer
-from unsloth import FastVisionModel  # Use unsloth's model class
+from unsloth import FastVisionModel, is_bf16_supported
 import json
 import torch
 from huggingface_hub import HfApi
 
 def load_hyperparams(file_path="hyperparams.json"):
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"Hyperparameters file not found: {file_path}")
     with open(file_path, 'r') as f:
         return json.load(f)
 
@@ -15,29 +17,42 @@ def merge_and_upload_model(lora_model_id, hyperparams):
     # Create merges directory if it doesn't exist
     os.makedirs("merges", exist_ok=True)
     
-    # 1. First load base model
+    # 1. First load base model - using same initialization as training_pass_vlm.py
     print(f"Loading base model: {hyperparams['model']['base_model']}")
     model, tokenizer = FastVisionModel.from_pretrained(
-                        hyperparams["model"]["base_model"],
-                        device_map="auto",
-                        #torch_dtype=torch.float16,  # Use same dtype as training
+        hyperparams["model"]["base_model"],
+        load_in_4bit=hyperparams["model"]["load_in_4bit"],
+        use_gradient_checkpointing=hyperparams["model"]["use_gradient_checkpointing"],
+        device_map="auto",
     )
     
-    # 2. Load adapter model with unsloth
+    # 2. Load adapter model with same settings
     print(f"Loading LoRA adapter: {lora_model_id}")
     adapter_model, _ = FastVisionModel.from_pretrained(
         lora_model_id,
+        load_in_4bit=hyperparams["model"]["load_in_4bit"],
+        use_gradient_checkpointing=hyperparams["model"]["use_gradient_checkpointing"],
         device_map="auto",
-        torch_dtype=torch.float16,
+    )
+    
+    # Add LoRA configuration from hyperparams
+    adapter_model = FastVisionModel.get_peft_model(
+        adapter_model,
+        finetune_vision_layers=hyperparams["lora"]["finetune_vision_layers"],
+        finetune_language_layers=hyperparams["lora"]["finetune_language_layers"],
+        finetune_attention_modules=hyperparams["lora"]["finetune_attention_modules"],
+        finetune_mlp_modules=hyperparams["lora"]["finetune_mlp_modules"],
+        r=hyperparams["lora"]["r"],
+        lora_alpha=hyperparams["lora"]["alpha"],
+        lora_dropout=hyperparams["lora"]["dropout"],
+        bias=hyperparams["lora"]["bias"],
+        random_state=hyperparams["lora"]["random_state"],
+        use_rslora=hyperparams["lora"]["use_rslora"],
+        loftq_config=None,
     )
     
     # 3. Merge adapter with base model
     print("Merging LoRA weights into base model...")
-    # Get the underlying PEFT model
-    if hasattr(adapter_model, "get_base_model"):
-        adapter_model = adapter_model.get_base_model()
-    
-    # Merge weights
     merged_model = adapter_model.merge_and_unload()
     
     # Get model name for saving
@@ -49,7 +64,7 @@ def merge_and_upload_model(lora_model_id, hyperparams):
     merged_model.save_pretrained(
         merged_model_path,
         safe_serialization=True,
-        max_shard_size="5GB"  # Shard large models
+        max_shard_size="5GB"
     )
     
     # 5. Save tokenizer with all necessary files
@@ -61,8 +76,7 @@ def merge_and_upload_model(lora_model_id, hyperparams):
         "tokenizer_config.json",
         "tokenizer.json",
         "special_tokens_map.json",
-        "special_tokens_map.json",
-        "preprocessor_config.json",  # Required for vision models
+        "preprocessor_config.json",
         "config.json"
     ]
     for file in required_files:
@@ -76,7 +90,6 @@ def merge_and_upload_model(lora_model_id, hyperparams):
     hub_model_id = f"MykMaks/{model_name}-merged"
     print(f"Uploading merged model to Hub: {hub_model_id}")
     
-    # Upload with proper metadata
     merged_model.push_to_hub(
         hub_model_id,
         safe_serialization=True,
@@ -89,7 +102,7 @@ def merge_and_upload_model(lora_model_id, hyperparams):
     return hub_model_id
 
 def main():
-    # Load hyperparameters
+    # Load hyperparameters - same as training
     hyperparams = load_hyperparams()
     
     # Specific LoRA model to merge
