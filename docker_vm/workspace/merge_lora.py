@@ -1,6 +1,6 @@
 import os
-from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
-from peft import AutoPeftModelForCausalLM
+from transformers import AutoTokenizer
+from unsloth import FastVisionModel  # Use unsloth's model class
 import json
 import torch
 from huggingface_hub import HfApi
@@ -10,38 +10,42 @@ def load_hyperparams(file_path="hyperparams.json"):
         return json.load(f)
 
 def merge_and_upload_model(lora_model_id, hyperparams):
-    """Merge LoRA adapter with base model following best practices"""
+    """Merge LoRA adapter with base model following unsloth best practices"""
     
     # Create merges directory if it doesn't exist
     os.makedirs("merges", exist_ok=True)
     
-    # 1. First load base model without quantization
+    # 1. First load base model
     print(f"Loading base model: {hyperparams['model']['base_model']}")
-    base_model = AutoModelForCausalLM.from_pretrained(
+    model, tokenizer = FastVisionModel.from_pretrained(
         hyperparams["model"]["base_model"],
         device_map="auto",
         torch_dtype=torch.float16,  # Use same dtype as training
     )
     
-    # 2. Load adapter model
+    # 2. Load adapter model with unsloth
     print(f"Loading LoRA adapter: {lora_model_id}")
-    adapter_model = AutoPeftModelForCausalLM.from_pretrained(
+    adapter_model, _ = FastVisionModel.from_pretrained(
         lora_model_id,
         device_map="auto",
-        torch_dtype=torch.float16,  # Use same dtype as training
-        is_trainable=False  # Prevent quantization issues
+        torch_dtype=torch.float16,
     )
     
     # 3. Merge adapter with base model
     print("Merging LoRA weights into base model...")
+    # Get the underlying PEFT model
+    if hasattr(adapter_model, "get_base_model"):
+        adapter_model = adapter_model.get_base_model()
+    
+    # Merge weights
     merged_model = adapter_model.merge_and_unload()
     
     # Get model name for saving
     model_name = lora_model_id.split("/")[-1]
     merged_model_path = f"merges/{model_name}-merged"
     
-    # 4. Save unquantized merged model
-    print(f"Saving unquantized merged model to: {merged_model_path}")
+    # 4. Save merged model
+    print(f"Saving merged model to: {merged_model_path}")
     merged_model.save_pretrained(
         merged_model_path,
         safe_serialization=True,
@@ -50,14 +54,16 @@ def merge_and_upload_model(lora_model_id, hyperparams):
     
     # 5. Save tokenizer with all necessary files
     print("Saving tokenizer...")
-    tokenizer = AutoTokenizer.from_pretrained(hyperparams["model"]["base_model"])
     tokenizer.save_pretrained(merged_model_path)
     
     # Ensure all tokenizer files are present
     required_files = [
         "tokenizer_config.json",
         "tokenizer.json",
-        "special_tokens_map.json"
+        "special_tokens_map.json",
+        "special_tokens_map.json",
+        "preprocessor_config.json",  # Required for vision models
+        "config.json"
     ]
     for file in required_files:
         if not os.path.exists(os.path.join(merged_model_path, file)):
@@ -70,6 +76,7 @@ def merge_and_upload_model(lora_model_id, hyperparams):
     hub_model_id = f"MykMaks/{model_name}-merged"
     print(f"Uploading merged model to Hub: {hub_model_id}")
     
+    # Upload with proper metadata
     merged_model.push_to_hub(
         hub_model_id,
         safe_serialization=True,
